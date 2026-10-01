@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8f8fb;
+  --foreground: #1d1b24;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  color: var(--foreground);
+  background: var(--background);
+  font-family:
+    Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  color: #241d44;
+  background: #dcd4ff;
+}
+
+.hero-surface {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(248, 248, 251, 0.9) 78%),
+    #f8f8fb;
+}
+
+.hero-orb {
+  position: absolute;
+  z-index: 0;
+  border-radius: 9999px;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.hero-orb-one {
+  top: 9%;
+  right: -10%;
+  width: 430px;
+  height: 430px;
+  background: radial-gradient(circle, rgba(207, 196, 255, 0.34), rgba(207, 196, 255, 0));
+}
+
+.hero-orb-two {
+  bottom: 2%;
+  left: -11%;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, rgba(165, 229, 205, 0.24), rgba(165, 229, 205, 0));
+}
+
+.estimator-card {
+  isolation: isolate;
+}
+
+.estimator-card::after {
+  position: absolute;
+  z-index: -1;
+  right: -2rem;
+  bottom: -2rem;
+  width: 12rem;
+  height: 12rem;
+  content: "";
+  border-radius: 9999px;
+  background: rgba(120, 96, 229, 0.08);
+  filter: blur(25px);
+  pointer-events: none;
+}
+
+.process-line {
+  z-index: 0;
+}
+
+.cta-surface {
+  isolation: isolate;
+}
+
+.cta-orb {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.cta-orb-one {
+  top: -100px;
+  right: 6%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(112, 88, 226, 0.3), rgba(112, 88, 226, 0));
+}
+
+.cta-orb-two {
+  bottom: -150px;
+  left: 3%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(62, 188, 144, 0.16), rgba(62, 188, 144, 0));
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+input[type="number"] {
+  appearance: textfield;
+}
+
+@media (max-width: 639px) {
+  .hero-orb-one {
+    top: 3%;
+    right: -60%;
+    width: 360px;
+    height: 360px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  body.printing-quote {
+    background: white !important;
+  }
+
+  body.printing-quote * {
+    visibility: hidden !important;
+  }
+
+  body.printing-quote .quote-print-shell,
+  body.printing-quote .quote-print-shell *,
+  body.printing-quote .quote-document,
+  body.printing-quote .quote-document * {
+    visibility: visible !important;
+  }
+
+  body.printing-quote .quote-print-shell {
+    position: absolute !important;
+    inset: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: white !important;
+    backdrop-filter: none !important;
+  }
+
+  body.printing-quote .quote-document {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.printing-quote .no-print {
+    display: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+}
