@@ -12,6 +12,7 @@ interface QuoteModalProps {
   onClose: () => void;
   notify: (message: string) => void;
   onSaveDraft: (businessName: string, customerName: string) => void;
+  isEditingDraft?: boolean;
 }
 
 export function QuoteModal({
@@ -21,6 +22,7 @@ export function QuoteModal({
   onClose,
   notify,
   onSaveDraft,
+  isEditingDraft = false,
 }: QuoteModalProps) {
   const [businessName, setBusinessName] = useState("Your Company");
   const [customerName, setCustomerName] = useState("");
@@ -104,8 +106,8 @@ export function QuoteModal({
                 Quotation QF-2026-0248
               </p>
               <p className="mt-1 text-[#777481]">Valid for 30 days</p>
-              <span className="mt-3 inline-flex rounded-full bg-[#e5f6ed] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#188052]">
-                Draft
+              <span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${isEditingDraft ? "bg-[#e9f8f0] text-[#188052]" : "bg-[#e5f6ed] text-[#188052]"}`}>
+                {isEditingDraft ? "Estimate" : "Draft"}
               </span>
             </div>
           </div>
@@ -236,7 +238,7 @@ export function QuoteModal({
               }}
               className="flex-1 rounded-xl border border-[#dcd8e2] bg-white px-4 py-3 text-sm font-semibold text-[#3e3a46] transition hover:bg-[#f6f5f7] sm:flex-none"
             >
-              Save draft
+              {isEditingDraft ? "Save estimate" : "Save draft"}
             </button>
             <button
               type="button"

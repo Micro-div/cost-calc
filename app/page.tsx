@@ -71,6 +71,7 @@ export default function Home() {
     null,
   );
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [loadedDraftId, setLoadedDraftId] = useState<string | null>(null);
 
   const selectedCategory = useMemo(
     () => categories.find((item) => item.id === categoryId) ?? categories[0],
@@ -163,6 +164,7 @@ export default function Home() {
     setLocationId(selectedLocationId);
     setQuestionStep(0);
     setStage("questions");
+    setLoadedDraftId(null);
     window.setTimeout(() => scrollToSection("estimator"), 30);
   };
 
@@ -182,6 +184,20 @@ export default function Home() {
     );
     setEstimate(result);
     setStage("complete");
+    setLoadedDraftId(null);
+
+    // Nayi estimate generate hote hi auto-save draft mein
+    const draftEntry: HistoryEntry = {
+      id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      type: "draft",
+      title: result.projectTitle,
+      savedAt: new Date().toISOString(),
+      data: result,
+    };
+    const updated = [draftEntry, ...history].slice(0, 50);
+    setHistory(updated);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+
     window.setTimeout(() => scrollToSection("estimate-result"), 80);
   };
 
@@ -196,6 +212,7 @@ export default function Home() {
     setQuestionStep(0);
     setStage("describe");
     setEstimate(null);
+    setLoadedDraftId(null);
     window.setTimeout(() => scrollToSection("estimator"), 50);
   };
 
@@ -203,6 +220,7 @@ export default function Home() {
     const category = categories.find((item) => item.id === id) ?? categories[0];
     setCategoryId(id);
     setStage("describe");
+    setLoadedDraftId(null);
     if (!description.trim()) setDescription(category.example);
     window.setTimeout(() => scrollToSection("estimator"), 30);
   };
@@ -210,6 +228,7 @@ export default function Home() {
   const openQuotation = () => {
     if (!estimate) return;
     setQuoteItems(estimate.items.map((item) => ({ ...item })));
+    setLoadedDraftId(null);
     setQuoteOpen(true);
   };
 
@@ -242,7 +261,13 @@ export default function Home() {
       savedAt: new Date().toISOString(),
       data: estimate,
     };
-    const updated = [entry, ...history].slice(0, 50);
+    // Estimate save karne par matching draft hat jaye
+    const updated = [
+      entry,
+      ...history.filter(
+        (e) => !(e.type === "draft" && e.title === estimate.projectTitle),
+      ),
+    ].slice(0, 50);
     setHistory(updated);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
     localStorage.setItem(
@@ -254,6 +279,31 @@ export default function Home() {
 
   const saveDraft = (businessName?: string, customerName?: string) => {
     if (!estimate) return;
+
+    // Agar yeh draft history se load hua tha, toh save karte waqt
+    // estimate ban jaye aur purana draft history se hat jaye
+    if (loadedDraftId) {
+      const estimateEntry: HistoryEntry = {
+        id: `est-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        type: "estimate",
+        title: estimate.projectTitle,
+        savedAt: new Date().toISOString(),
+        data: {
+          ...estimate,
+          items: quoteItems,
+        },
+      };
+      const updated = [
+        estimateEntry,
+        ...history.filter((e) => e.id !== loadedDraftId),
+      ].slice(0, 50);
+      setHistory(updated);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+      setLoadedDraftId(null);
+      notify("Draft converted to estimate and saved");
+      return;
+    }
+
     const entry: HistoryEntry = {
       id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       type: "draft",
@@ -268,6 +318,7 @@ export default function Home() {
     const updated = [entry, ...history].slice(0, 50);
     setHistory(updated);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    setLoadedDraftId(null);
     notify("Draft saved on this device");
   };
 
@@ -281,10 +332,12 @@ export default function Home() {
       setQualityId(est.quality.id);
       setEstimate(est);
       setStage("complete");
+      setLoadedDraftId(null);
       window.setTimeout(() => scrollToSection("estimate-result"), 80);
     } else {
       const draft = entry.data as { items: EstimateItem[]; businessName: string; customerName: string };
       setQuoteItems(draft.items);
+      setLoadedDraftId(entry.id);
       setQuoteOpen(true);
     }
   };
@@ -388,9 +441,13 @@ export default function Home() {
           estimate={estimate}
           items={quoteItems}
           onChange={setQuoteItems}
-          onClose={() => setQuoteOpen(false)}
+          onClose={() => {
+            setQuoteOpen(false);
+            setLoadedDraftId(null);
+          }}
           notify={notify}
           onSaveDraft={saveDraft}
+          isEditingDraft={loadedDraftId !== null}
         />
       )}
 
