@@ -11,6 +11,7 @@ interface QuoteModalProps {
   onChange: (items: EstimateItem[]) => void;
   onClose: () => void;
   notify: (message: string) => void;
+  onSaveDraft: (businessName: string, customerName: string) => void;
 }
 
 export function QuoteModal({
@@ -19,6 +20,7 @@ export function QuoteModal({
   onChange,
   onClose,
   notify,
+  onSaveDraft,
 }: QuoteModalProps) {
   const [businessName, setBusinessName] = useState("Your Company");
   const [customerName, setCustomerName] = useState("");
@@ -229,7 +231,7 @@ export function QuoteModal({
             <button
               type="button"
               onClick={() => {
-                notify("Quotation details saved for this session");
+                onSaveDraft(businessName, customerName);
                 onClose();
               }}
               className="flex-1 rounded-xl border border-[#dcd8e2] bg-white px-4 py-3 text-sm font-semibold text-[#3e3a46] transition hover:bg-[#f6f5f7] sm:flex-none"
