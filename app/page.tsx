@@ -37,6 +37,16 @@ import type {
   SharedEstimate,
 } from "@/types";
 
+interface HistoryEntry {
+  id: string;
+  type: "estimate" | "draft";
+  title: string;
+  savedAt: string;
+  data: EstimateResult | { items: EstimateItem[]; businessName: string; customerName: string };
+}
+
+const HISTORY_KEY = "costcalc-history";
+
 export default function Home() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<CategoryId>("web");
@@ -60,6 +70,7 @@ export default function Home() {
   const [currencyOverride, setCurrencyOverride] = useState<CurrencyCode | null>(
     null,
   );
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const selectedCategory = useMemo(
     () => categories.find((item) => item.id === categoryId) ?? categories[0],
@@ -74,6 +85,20 @@ export default function Home() {
     setToast(message);
     window.setTimeout(() => setToast(""), 2800);
   };
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as HistoryEntry[];
+        if (Array.isArray(parsed)) {
+          setHistory(parsed);
+        }
+      }
+    } catch {
+      // ignore corrupted history
+    }
+  }, []);
 
   useEffect(() => {
     if (!window.location.hash.startsWith("#estimate=")) return;
@@ -210,11 +235,69 @@ export default function Home() {
 
   const saveEstimate = () => {
     if (!estimate) return;
+    const entry: HistoryEntry = {
+      id: `est-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      type: "estimate",
+      title: estimate.projectTitle,
+      savedAt: new Date().toISOString(),
+      data: estimate,
+    };
+    const updated = [entry, ...history].slice(0, 50);
+    setHistory(updated);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
     localStorage.setItem(
       "costcalc-latest-estimate",
       JSON.stringify({ ...estimate, savedAt: new Date().toISOString() }),
     );
     notify("Estimate saved on this device");
+  };
+
+  const saveDraft = (businessName?: string, customerName?: string) => {
+    if (!estimate) return;
+    const entry: HistoryEntry = {
+      id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      type: "draft",
+      title: estimate.projectTitle,
+      savedAt: new Date().toISOString(),
+      data: {
+        items: quoteItems,
+        businessName: businessName ?? "",
+        customerName: customerName ?? "",
+      },
+    };
+    const updated = [entry, ...history].slice(0, 50);
+    setHistory(updated);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    notify("Draft saved on this device");
+  };
+
+  const loadHistoryEntry = (entry: HistoryEntry) => {
+    if (entry.type === "estimate") {
+      const est = entry.data as EstimateResult;
+      setDescription(est.description);
+      setCategoryId(est.category.id);
+      setLocationId(est.location.id);
+      setSizeId(est.size.id);
+      setQualityId(est.quality.id);
+      setEstimate(est);
+      setStage("complete");
+      window.setTimeout(() => scrollToSection("estimate-result"), 80);
+    } else {
+      const draft = entry.data as { items: EstimateItem[]; businessName: string; customerName: string };
+      setQuoteItems(draft.items);
+      setQuoteOpen(true);
+    }
+  };
+
+  const deleteHistoryEntry = (id: string) => {
+    const updated = history.filter((e) => e.id !== id);
+    setHistory(updated);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem(HISTORY_KEY);
   };
 
   const activeStep = stage === "describe" ? 0 : stage === "questions" ? 1 : 2;
@@ -241,6 +324,10 @@ export default function Home() {
         onCloseMobileMenu={() => setMobileMenuOpen(false)}
         onOpenSettings={() => setSettingsOpen(true)}
         onEstimateClick={() => scrollToSection("estimator")}
+        history={history}
+        onLoadHistory={loadHistoryEntry}
+        onDeleteHistory={deleteHistoryEntry}
+        onClearHistory={clearHistory}
       />
 
       <Hero
@@ -303,6 +390,7 @@ export default function Home() {
           onChange={setQuoteItems}
           onClose={() => setQuoteOpen(false)}
           notify={notify}
+          onSaveDraft={saveDraft}
         />
       )}
 

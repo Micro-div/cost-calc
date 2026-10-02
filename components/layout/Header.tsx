@@ -1,7 +1,17 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { Icon } from "@/components/common/Icon";
 import { Brand } from "./Brand";
+import type { EstimateItem, EstimateResult } from "@/types";
+
+interface HistoryEntry {
+  id: string;
+  type: "estimate" | "draft";
+  title: string;
+  savedAt: string;
+  data: EstimateResult | { items: EstimateItem[]; businessName: string; customerName: string };
+}
 
 interface HeaderProps {
   mobileMenuOpen: boolean;
@@ -9,6 +19,10 @@ interface HeaderProps {
   onCloseMobileMenu: () => void;
   onOpenSettings: () => void;
   onEstimateClick: () => void;
+  history: HistoryEntry[];
+  onLoadHistory: (entry: HistoryEntry) => void;
+  onDeleteHistory: (id: string) => void;
+  onClearHistory: () => void;
 }
 
 // Mobile-only logo size (screens under 640px). Change 0.75 to resize:
@@ -25,9 +39,38 @@ export function Header({
   onCloseMobileMenu,
   onOpenSettings,
   onEstimateClick,
+  history,
+  onLoadHistory,
+  onDeleteHistory,
+  onClearHistory,
 }: HeaderProps) {
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const historyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!historyOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setHistoryOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [historyOpen]);
+
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "";
+    }
+  };
+
   return (
-    <header className="relative z-50 border-b border-[#e9e7ed]/90 bg-white/90 backdrop-blur-xl">
+    <header className={`relative z-50 border-b border-[#e9e7ed]/90 bg-white/90 ${historyOpen ? "" : "backdrop-blur-xl"}`}>
       <style>{headerCss}</style>
       <nav
         className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between px-5 sm:px-7"
@@ -55,6 +98,106 @@ export function Header({
           >
             Why CostCalc
           </a>
+          <div className="relative" ref={historyRef}>
+            <button
+              type="button"
+              onClick={() => setHistoryOpen((o) => !o)}
+              className="flex items-center gap-1.5 text-sm font-medium text-[#65616d] transition hover:text-[#26232d]"
+              aria-expanded={historyOpen}
+              aria-label="Saved estimates and drafts"
+            >
+              <Icon name="clock" className="h-4 w-4" />
+              History
+              {history.length > 0 && (
+                <span className="ml-0.5 rounded-full bg-[#6754e7] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {history.length}
+                </span>
+              )}
+            </button>
+            {historyOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-[60] bg-[#0a0a0f]/70"
+                  onClick={() => setHistoryOpen(false)}
+                />
+                <div className="fixed left-1/2 top-1/2 z-[70] w-[600px] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-[#e8e5ed] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.3)]">
+                  <div className="flex items-center justify-between border-b border-[#f0eef3] px-6 py-4">
+                    <p className="text-base font-bold text-[#2b2732]">History</p>
+                    <div className="flex items-center gap-3">
+                      {history.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={onClearHistory}
+                          className="text-xs font-medium text-[#9a95a0] transition hover:text-[#6754e7]"
+                        >
+                          Clear all
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setHistoryOpen(false)}
+                        className="grid h-8 w-8 place-items-center rounded-lg text-[#9a95a0] transition hover:bg-[#f5f4f7] hover:text-[#3a3641]"
+                        aria-label="Close history"
+                      >
+                        <Icon name="close" className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    {history.length === 0 ? (
+                      <p className="px-6 py-12 text-center text-sm text-[#9a95a0]">
+                        No saved estimates or drafts yet.
+                      </p>
+                    ) : (
+                      <ul className="divide-y divide-[#f4f2f6]">
+                        {history.map((entry) => (
+                          <li key={entry.id} className="group relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onLoadHistory(entry);
+                                setHistoryOpen(false);
+                              }}
+                              className="w-full px-6 py-4 text-left transition hover:bg-[#f8f7fa]"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                    entry.type === "estimate"
+                                      ? "bg-[#e9f8f0] text-[#198454]"
+                                      : "bg-[#fff4e0] text-[#9a681c]"
+                                  }`}
+                                >
+                                  {entry.type}
+                                </span>
+                                <p className="truncate text-sm font-semibold text-[#3a3641]">
+                                  {entry.title}
+                                </p>
+                              </div>
+                              <p className="mt-1 text-xs text-[#9a95a0]">
+                                {formatDate(entry.savedAt)}
+                              </p>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteHistory(entry.id);
+                              }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#c5c1cc] opacity-0 transition hover:bg-[#f5f4f7] hover:text-[#6754e7] group-hover:opacity-100"
+                              aria-label="Delete entry"
+                            >
+                              <Icon name="close" className="h-3.5 w-3.5" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div className="hidden items-center gap-2 sm:flex">
           <button
@@ -112,6 +255,96 @@ export function Header({
                 {label}
               </a>
             ))}
+            <button
+              type="button"
+              onClick={() => {
+                onCloseMobileMenu();
+                setHistoryOpen(true);
+              }}
+              className="flex items-center gap-2 rounded-xl px-3 py-3 text-left text-sm font-semibold text-[#4c4854] hover:bg-[#f6f5f8]"
+            >
+              <Icon name="clock" className="h-4 w-4" />
+              History
+              {history.length > 0 && (
+                <span className="rounded-full bg-[#6754e7] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {history.length}
+                </span>
+              )}
+            </button>
+            {historyOpen && (
+              <>
+                <div className="fixed inset-0 z-[60] bg-[#0a0a0f]/70" onClick={() => setHistoryOpen(false)} />
+                <div className="fixed left-1/2 top-1/2 z-[70] w-[600px] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-[#e8e5ed] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.3)]">
+                <div className="flex items-center justify-between border-b border-[#f0eef3] px-4 py-3">
+                  <p className="text-sm font-bold text-[#2b2732]">History</p>
+                  <div className="flex items-center gap-3">
+                    {history.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={onClearHistory}
+                        className="text-xs font-medium text-[#9a95a0] transition hover:text-[#6754e7]"
+                      >
+                        Clear all
+                      </button>
+                    )}
+                    <button type="button" onClick={() => setHistoryOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg text-[#9a95a0] transition hover:bg-[#f5f4f7]" aria-label="Close history"><Icon name="close" className="h-4 w-4" /></button>
+                  </div>
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto">
+                  {history.length === 0 ? (
+                    <p className="px-4 py-6 text-center text-sm text-[#9a95a0]">
+                      No saved estimates or drafts yet.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-[#f4f2f6]">
+                      {history.map((entry) => (
+                        <li key={entry.id} className="group relative">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onLoadHistory(entry);
+                              setHistoryOpen(false);
+                              onCloseMobileMenu();
+                            }}
+                            className="w-full px-6 py-4 text-left transition hover:bg-[#f8f7fa]"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                  entry.type === "estimate"
+                                    ? "bg-[#e9f8f0] text-[#198454]"
+                                    : "bg-[#fff4e0] text-[#9a681c]"
+                                }`}
+                              >
+                                {entry.type}
+                              </span>
+                              <p className="truncate text-sm font-semibold text-[#3a3641]">
+                                {entry.title}
+                              </p>
+                            </div>
+                            <p className="mt-1 text-xs text-[#9a95a0]">
+                              {formatDate(entry.savedAt)}
+                            </p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteHistory(entry.id);
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#c5c1cc] opacity-0 transition hover:bg-[#f5f4f7] hover:text-[#6754e7] group-hover:opacity-100"
+                            aria-label="Delete entry"
+                          >
+                            <Icon name="close" className="h-3.5 w-3.5" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                </div>
+              </>
+            )}
             <button
               type="button"
               onClick={() => {
