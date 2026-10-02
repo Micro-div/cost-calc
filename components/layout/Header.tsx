@@ -212,7 +212,7 @@ export function Header({
           <button
             type="button"
             onClick={onEstimateClick}
-            className="flex items-center gap-2 rounded-xl bg-[#1d1a25] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#302b3a]"
+            className="flex items-center gap-2 rounded-xl bg-[#313131] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#5b5b5c]"
           >
             Estimate my project
             <Icon name="arrow-right" className="h-4 w-4" />

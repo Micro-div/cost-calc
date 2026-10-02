@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { LoadingWrapper } from "@/components/common/LoadingWrapper";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,7 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <LoadingWrapper>{children}</LoadingWrapper>
+      </body>
     </html>
   );
 }
