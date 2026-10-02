@@ -13,9 +13,7 @@ const PARTICLES = Array.from({ length: 12 }, (_, i) => ({
   duration: 2 + ((i * 11) % 15) / 10,
 }));
 
-export function Loader() {
-  const [visible, setVisible] = useState(true);
-  const [fading, setFading] = useState(false);
+export function Loader({ fading }: { fading: boolean }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -26,20 +24,8 @@ export function Loader() {
       setProgress(Math.round(pct));
     }, 30);
 
-    const fadeTimer = setTimeout(() => setFading(true), MIN_DISPLAY_TIME);
-    const hideTimer = setTimeout(
-      () => setVisible(false),
-      MIN_DISPLAY_TIME + FADE_OUT_DURATION,
-    );
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(fadeTimer);
-      clearTimeout(hideTimer);
-    };
+    return () => clearInterval(interval);
   }, []);
-
-  if (!visible) return null;
 
   return (
     <div
