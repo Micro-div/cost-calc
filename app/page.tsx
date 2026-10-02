@@ -335,10 +335,26 @@ export default function Home() {
       setLoadedDraftId(null);
       window.setTimeout(() => scrollToSection("estimate-result"), 80);
     } else {
-      const draft = entry.data as { items: EstimateItem[]; businessName: string; customerName: string };
-      setQuoteItems(draft.items);
-      setLoadedDraftId(entry.id);
-      setQuoteOpen(true);
+      const draftData = entry.data;
+      // Auto-saved draft mein full EstimateResult hota hai
+      if ("projectTitle" in draftData) {
+        const est = draftData as EstimateResult;
+        setDescription(est.description);
+        setCategoryId(est.category.id);
+        setLocationId(est.location.id);
+        setSizeId(est.size.id);
+        setQualityId(est.quality.id);
+        setEstimate(est);
+        setStage("complete");
+        setQuoteItems(est.items);
+        setLoadedDraftId(entry.id);
+        setQuoteOpen(true);
+      } else {
+        const draft = draftData as { items: EstimateItem[]; businessName: string; customerName: string };
+        setQuoteItems(draft.items);
+        setLoadedDraftId(entry.id);
+        setQuoteOpen(true);
+      }
     }
   };
 
