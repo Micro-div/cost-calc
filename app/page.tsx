@@ -76,6 +76,7 @@ export default function Home() {
   const [loadedDraftId, setLoadedDraftId] = useState<string | null>(null);
   const [customDescription, setCustomDescription] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [customSummary, setCustomSummary] = useState("");
   const [customProjectTypes, setCustomProjectTypes] = useState<CustomProjectType[]>(
     [],
@@ -309,35 +310,40 @@ export default function Home() {
       return;
     }
 
-    const result = calculateEstimate(
-      description,
-      categoryId,
-      locationId,
-      sizeId,
-      qualityId,
-      autoCurrency ? currencyOverride : manualCurrency,
-    );
-    if (titleOverride) {
-      result.projectTitle = titleOverride;
-      setTitleOverride(null);
-    }
-    setEstimate(result);
-    setStage("complete");
-    setLoadedDraftId(null);
+    setIsGenerating(true);
 
-    // Nayi estimate generate hote hi auto-save draft mein
-    const draftEntry: HistoryEntry = {
-      id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      type: "draft",
-      title: result.projectTitle,
-      savedAt: new Date().toISOString(),
-      data: result,
-    };
-    const updated = [draftEntry, ...history].slice(0, 50);
-    setHistory(updated);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    window.setTimeout(() => {
+      const result = calculateEstimate(
+        description,
+        categoryId,
+        locationId,
+        sizeId,
+        qualityId,
+        autoCurrency ? currencyOverride : manualCurrency,
+      );
+      if (titleOverride) {
+        result.projectTitle = titleOverride;
+        setTitleOverride(null);
+      }
+      setEstimate(result);
+      setStage("complete");
+      setLoadedDraftId(null);
+      setIsGenerating(false);
 
-    window.setTimeout(() => scrollToSection("estimate-result"), 80);
+      // Nayi estimate generate hote hi auto-save draft mein
+      const draftEntry: HistoryEntry = {
+        id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        type: "draft",
+        title: result.projectTitle,
+        savedAt: new Date().toISOString(),
+        data: result,
+      };
+      const updated = [draftEntry, ...history].slice(0, 50);
+      setHistory(updated);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+
+      window.setTimeout(() => scrollToSection("estimate-result"), 80);
+    }, 2000);
   };
 
   const resetEstimate = () => {
@@ -590,6 +596,7 @@ export default function Home() {
           }
         }}
         onContinueQuestions={continueQuestions}
+        isGenerating={isGenerating}
         onViewEstimate={() => scrollToSection("estimate-result")}
         onNewEstimate={resetEstimate}
       />
