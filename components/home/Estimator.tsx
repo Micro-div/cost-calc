@@ -11,6 +11,7 @@ import { formatCompactCurrency, formatCurrency, scrollToSection } from "@/lib";
 import type {
   Category,
   CategoryId,
+  CustomProjectType,
   EstimateResult,
   IconName,
   Location,
@@ -43,6 +44,16 @@ export interface EstimatorProps {
   onBack: () => void;
   onContinueQuestions: () => void;
   onViewEstimate: () => void;
+  onNewEstimate: () => void;
+  customDescription: string;
+  onCustomDescriptionChange: (value: string) => void;
+  onAnalyzeCustom: () => void;
+  analyzing: boolean;
+  customProjectTypes: CustomProjectType[];
+  selectedCustom: CustomProjectType | null;
+  onSelectCustomType: (name: string) => void;
+  onRemoveCustomType: (name: string) => void;
+  customSummary: string;
 }
 
 export function Estimator({
@@ -67,6 +78,16 @@ export function Estimator({
   onBack,
   onContinueQuestions,
   onViewEstimate,
+  onNewEstimate,
+  customDescription,
+  onCustomDescriptionChange,
+  onAnalyzeCustom,
+  analyzing,
+  customProjectTypes,
+  selectedCustom,
+  onSelectCustomType,
+  onRemoveCustomType,
+  customSummary,
 }: EstimatorProps) {
   return (
     <div className="estimator-card relative overflow-hidden rounded-[26px] border border-white/90 bg-white p-3 shadow-[0_30px_90px_rgba(45,38,74,0.14)] sm:p-4">
@@ -141,32 +162,113 @@ export function Estimator({
           </div>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="sr-only">Project category</span>
-              <span className="relative block">
-                <Icon
-                  name={selectedCategory.icon as IconName}
-                  className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#6d58db]"
-                />
-                <select
-                  value={categoryId}
-                  onChange={(event) =>
-                    onCategoryChange(event.target.value as CategoryId)
-                  }
-                  className="h-11 w-full appearance-none rounded-xl border border-[#dedbe4] bg-white pl-10 pr-9 text-sm font-semibold text-[#403c47] outline-none transition focus:border-[#7661e8] focus:ring-4 focus:ring-[#7661e8]/10"
+            <div>
+              <label className="block">
+                <span className="sr-only">Project category</span>
+                <span className="relative block">
+                  <Icon
+                    name={selectedCategory.icon as IconName}
+                    className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#6d58db]"
+                  />
+                  <select
+                    value={
+                      selectedCustom
+                        ? `custom:${selectedCustom.name}`
+                        : categoryId
+                    }
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (value.startsWith("custom:")) {
+                        onSelectCustomType(value.slice("custom:".length));
+                      } else {
+                        onCategoryChange(value as CategoryId);
+                      }
+                    }}
+                    className="h-11 w-full appearance-none rounded-xl border border-[#dedbe4] bg-white pl-10 pr-9 text-sm font-semibold text-[#403c47] outline-none transition focus:border-[#7661e8] focus:ring-4 focus:ring-[#7661e8]/10"
+                  >
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.shortName}
+                      </option>
+                    ))}
+                    {customProjectTypes.length > 0 && (
+                      <optgroup label="Your projects">
+                        {customProjectTypes.map((custom) => (
+                          <option
+                            key={custom.name}
+                            value={`custom:${custom.name}`}
+                          >
+                            {custom.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                  <Icon
+                    name="chevron-down"
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#77727f]"
+                  />
+                </span>
+              </label>
+              {selectedCustom && (
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-[#f0edff] px-2.5 py-1.5">
+                  <span className="truncate text-[11px] font-semibold text-[#604fc6]">
+                    {selectedCustom.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveCustomType(selectedCustom.name)}
+                    aria-label={`Remove ${selectedCustom.name}`}
+                    className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white text-[#8a2432] transition hover:bg-[#f6c9cf]"
+                  >
+                    <Icon name="close" className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              <div className="mt-3 rounded-xl border border-[#e3e0e7] bg-white p-3">
+                <label
+                  htmlFor="custom-project-description"
+                  className="text-xs font-bold text-[#5c5864]"
                 >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.shortName}
-                    </option>
-                  ))}
-                </select>
-                <Icon
-                  name="chevron-down"
-                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#77727f]"
-                />
-              </span>
-            </label>
+                  Describe your own project
+                </label>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    id="custom-project-description"
+                    value={customDescription}
+                    onChange={(event) =>
+                      onCustomDescriptionChange(event.target.value.slice(0, 200))
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        onAnalyzeCustom();
+                      }
+                    }}
+                    placeholder="tyre shop with online booking and stock tracking"
+                    className="h-10 min-w-0 flex-1 rounded-lg border border-[#dedbe4] bg-white px-3 text-sm text-[#33303a] outline-none transition placeholder:text-[#aaa6b0] focus:border-[#7661e8] focus:ring-4 focus:ring-[#7661e8]/10"
+                  />
+                  <button
+                    type="button"
+                    onClick={onAnalyzeCustom}
+                    disabled={!customDescription.trim() || analyzing}
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#6754e7] px-3 text-xs font-bold text-white transition hover:bg-[#5946d3] disabled:cursor-not-allowed disabled:bg-[#c8c3d6]"
+                  >
+                    {analyzing ? (
+                      <Icon name="rotate" className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Icon name="sparkles" className="h-3.5 w-3.5" />
+                    )}
+                    {analyzing ? "Analyzing" : "Analyze"}
+                  </button>
+                </div>
+                {customSummary && (
+                  <p className="mt-2 text-[11px] leading-5 text-[#797581]">
+                    {customSummary}
+                  </p>
+                )}
+              </div>
+            </div>
             <label className="block">
               <span className="sr-only">Project location</span>
               <span className="relative block">
@@ -193,17 +295,27 @@ export function Estimator({
             </label>
           </div>
 
-          <button
-            type="submit"
-            disabled={!descriptionReady}
-            className="group mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#6754e7] px-5 py-3.5 text-sm font-bold text-white shadow-[0_10px_25px_rgba(103,84,231,0.25)] transition hover:bg-[#5946d3] disabled:cursor-not-allowed disabled:bg-[#c8c3d6] disabled:shadow-none"
-          >
-            Analyze my project
-            <Icon
-              name="arrow-right"
-              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-            />
-          </button>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={onNewEstimate}
+              className="flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-[#ece9ef] px-4 py-3 text-sm font-bold text-[#3a3641] transition hover:bg-[#ddd8e2]"
+            >
+              <Icon name="plus" className="h-4 w-4" />
+              New estimate
+            </button>
+            <button
+              type="submit"
+              disabled={!descriptionReady}
+              className="group flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#6754e7] px-5 py-3.5 text-sm font-bold text-white shadow-[0_10px_25px_rgba(103,84,231,0.25)] transition hover:bg-[#5946d3] disabled:cursor-not-allowed disabled:bg-[#c8c3d6] disabled:shadow-none"
+            >
+              Analyze my project
+              <Icon
+                name="arrow-right"
+                className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+              />
+            </button>
+          </div>
           <p className="mt-2 text-center text-[10px] font-medium text-[#95919c]">
             {descriptionReady
               ? "Your description stays private and is never shared."
@@ -219,7 +331,8 @@ export function Estimator({
               Quick question {questionStep + 1} of 2
             </span>
             <span className="text-xs font-medium text-[#8a8691]">
-              {selectedCategory.shortName} · {selectedLocation.city}
+              {selectedCustom?.name ?? selectedCategory.shortName} ·{" "}
+              {selectedLocation.city}
             </span>
           </div>
 

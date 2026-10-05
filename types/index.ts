@@ -81,3 +81,9 @@ export interface SharedEstimate {
   sizeId: ProjectSizeId;
   qualityId: QualityId;
 }
+
+export interface CustomProjectType {
+  name: string;
+  type: CategoryId;
+  features: string[];
+}

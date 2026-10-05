@@ -8,8 +8,11 @@ const nextConfig = {
   },
 
   // Fix Windows build crash during trace collection
+  // Limit build workers: this machine has ~4GB RAM and the worker pool
+  // otherwise gets OOM-killed during static generation/export
   experimental: {
     workerThreads: false,
+    cpus: 1,
   },
 
   // Specify the path if your app is not deployed at the root of your domain.
