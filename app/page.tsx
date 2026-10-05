@@ -537,7 +537,7 @@ export default function Home() {
         onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
         onCloseMobileMenu={() => setMobileMenuOpen(false)}
         onOpenSettings={() => setSettingsOpen(true)}
-        onEstimateClick={() => scrollToSection("estimator")}
+        onEstimateClick={resetEstimate}
         history={history}
         onLoadHistory={loadHistoryEntry}
         onDeleteHistory={deleteHistoryEntry}

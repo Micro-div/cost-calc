@@ -35,6 +35,10 @@ const headerCss = `
 }
 `;
 
+// Shared look for the "Estimate my project" button (desktop + mobile menu).
+const estimateBtn =
+  "group flex items-center gap-2 rounded-xl bg-[#313131] px-4 py-2.5 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#5b5b5c] active:scale-[0.98]";
+
 export function Header({
   mobileMenuOpen,
   onToggleMobileMenu,
@@ -80,8 +84,19 @@ export function Header({
         className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between px-5 sm:px-7"
         aria-label="Main navigation"
       >
-        <div className="header-logo">
-          <Brand />
+        <div
+          onClick={(e) => {
+            if (window.location.pathname === "/") {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              onCloseMobileMenu();
+            }
+          }}
+          className="inline-block origin-left cursor-pointer transition-transform duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[3px] hover:scale-[1.07] active:scale-[0.96] motion-reduce:transition-none motion-reduce:hover:transform-none"
+        >
+          <span className="header-logo block">
+            <Brand />
+          </span>
         </div>
         <div className="hidden items-center gap-8 md:flex">
           <a
@@ -205,23 +220,15 @@ export function Header({
             )}
           </div>
         </div>
-        <div className="hidden items-center gap-2 sm:flex">
-          {/* <button
-            type="button"
-            onClick={onOpenSettings}
-            className="grid h-10 w-10 place-items-center rounded-xl border border-[#e5e2e9] text-[#393541] transition hover:bg-[#f5f4f7]"
-            aria-label="Currency settings"
-            title="Currency settings"
-          >
-            <Icon name="globe" className="h-4 w-4" />
-          </button> */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onEstimateClick}
-            className="flex items-center gap-2 rounded-xl bg-[#313131] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#5b5b5c]"
+            aria-label="New estimate"
+            className="group flex items-center gap-2 rounded-full bg-[#EEEDF3] px-4 py-2 text-sm font-semibold text-[#2b2732] transition hover:bg-[#e3e1ea]"
           >
-            Estimate my project
-            <Icon name="arrow-right" className="h-4 w-4" />
+            <Icon name="plus" className="h-4 w-4" />
+            <span className="hidden md:inline">New estimate</span>
           </button>
         </div>
         <div className="flex items-center gap-2 md:hidden">
@@ -256,7 +263,7 @@ export function Header({
                 key={id}
                 href={`#${id}`}
                 onClick={onCloseMobileMenu}
-                className="rounded-xl px-3 py-3 text-sm font-semibold text-[#4c4854] hover:bg-[#f6f5f8]"
+                className="rounded-xl px-3 py-3 text-sm font-semibold text-[#4c4854] transition hover:bg-[#f6f5f8] hover:text-[#d67d07]"
               >
                 {label}
               </a>
@@ -367,10 +374,15 @@ export function Header({
                 onCloseMobileMenu();
                 onEstimateClick();
               }}
-              className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-[#1d1a25] px-4 py-3 text-sm font-bold text-white"
+              className={`${estimateBtn} mt-2 justify-center`}
             >
               Estimate my project
-              <Icon name="arrow-right" className="h-4 w-4" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/plus.png"
+                alt=""
+                className="h-4 w-4 brightness-0 invert transition-transform duration-300 group-hover:rotate-90"
+              />
             </button>
           </div>
         </div>
