@@ -225,7 +225,7 @@ export function Estimator({
                   </button>
                 </div>
               )}
-              <div className="mt-3 rounded-xl border border-[#e3e0e7] bg-white p-3">
+              {/* <div className="mt-3 rounded-xl border border-[#e3e0e7] bg-white p-3">
                 <label
                   htmlFor="custom-project-description"
                   className="text-xs font-bold text-[#5c5864]"
@@ -268,6 +268,14 @@ export function Estimator({
                   </p>
                 )}
               </div>
+ */}
+
+
+
+
+
+
+
             </div>
             <label className="block">
               <span className="sr-only">Project location</span>
