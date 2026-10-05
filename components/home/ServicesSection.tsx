@@ -12,7 +12,7 @@ export function ServicesSection({ onChooseCategory }: ServicesSectionProps) {
   return (
     <section
       id="services"
-      className="scroll-mt-16 bg-[#f8f8fb] py-20 sm:py-28"
+      className="scroll-mt-20 bg-[#f8f8fb] py-20 sm:py-28"
     >
       <div className="mx-auto max-w-[1200px] px-5 sm:px-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
