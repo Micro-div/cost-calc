@@ -463,6 +463,35 @@ input[type="number"] {
   }
 }
 
+/* Generating overlay */
+.generating-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  background: rgba(248, 248, 251, 0.32);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.generating-overlay--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.generating-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  color: #3432ff;
+}
+
 /* Scroll-triggered fade-up reveal (all devices, reduced-motion safe) */
 .reveal {
   opacity: 0;

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { CurrencySettingsModal } from "@/components/common/CurrencySettingsModal";
+import { GeneratingOverlay } from "@/components/common/GeneratingOverlay";
 import { Toast } from "@/components/common/Toast";
 import { CtaSection } from "@/components/home/CtaSection";
 import { EstimateResultSection } from "@/components/home/EstimateResult";
@@ -655,6 +656,8 @@ export default function Home() {
 
       <Toast message={toast} />
       <Toast message={errorToast} error />
+
+      <GeneratingOverlay showing={isGenerating} />
     </main>
   );
 }
