@@ -43,6 +43,7 @@ export interface EstimatorProps {
   onSubmitDescription: (event: FormEvent<HTMLFormElement>) => void;
   onBack: () => void;
   onContinueQuestions: () => void;
+  isGenerating: boolean;
   onViewEstimate: () => void;
   onNewEstimate: () => void;
   customDescription: string;
@@ -116,6 +117,7 @@ export function Estimator({
   onSubmitDescription,
   onBack,
   onContinueQuestions,
+  isGenerating,
   onViewEstimate,
   onNewEstimate,
   customDescription,
@@ -475,10 +477,38 @@ export function Estimator({
               <button
                 type="button"
                 onClick={onContinueQuestions}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#6754e7] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_25px_rgba(103,84,231,0.22)] transition hover:bg-[#5946d3]"
+                disabled={isGenerating}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#6754e7] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_25px_rgba(103,84,231,0.22)] transition hover:bg-[#5946d3] disabled:cursor-not-allowed disabled:opacity-80"
               >
-                {questionStep === 0 ? "Continue" : "Generate my estimate"}
-                <Icon name="arrow-right" className="h-4 w-4" />
+                {isGenerating ? (
+                  <>
+                    <svg
+                      className="h-4 w-4 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    {questionStep === 0 ? "Continue" : "Generate my estimate"}
+                    <Icon name="arrow-right" className="h-4 w-4" />
+                  </>
+                )}
               </button>
             </div>
           </div>
