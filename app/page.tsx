@@ -191,7 +191,7 @@ export default function Home() {
     } catch {
       window.history.replaceState(null, "", window.location.pathname);
     }
-  }, [currencyOverride]);
+  }, [autoCurrency, currencyOverride, manualCurrency]);
 
   const persistCustomProjectTypes = (next: CustomProjectType[]) => {
     setCustomProjectTypes(next);
