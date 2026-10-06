@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-<<<<<<< HEAD
-import { CurrencySettingsModal } from "@/components/common/CurrencySettingsModal";
 import { GeneratingOverlay } from "@/components/common/GeneratingOverlay";
-=======
->>>>>>> a817188 (fixed mobile view)
 import { Toast } from "@/components/common/Toast";
 import { CtaSection } from "@/components/home/CtaSection";
 import { EstimateResultSection } from "@/components/home/EstimateResult";
@@ -25,7 +21,6 @@ import {
 import {
   calculateEstimate,
   detectCategory,
-  detectCurrencyFromLocale,
   detectLocation,
   scrollToSection,
 } from "@/lib";
@@ -35,7 +30,6 @@ import type {
   CustomProjectType,
   EstimateItem,
   EstimateResult,
-  Location,
   LocationId,
   ProjectSizeId,
   QualityId,
@@ -191,7 +185,8 @@ export default function Home() {
     } catch {
       window.history.replaceState(null, "", window.location.pathname);
     }
-  }, [autoCurrency, currencyOverride, manualCurrency]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currencyOverride]);
 
   const persistCustomProjectTypes = (next: CustomProjectType[]) => {
     setCustomProjectTypes(next);
@@ -523,15 +518,6 @@ export default function Home() {
 
   const activeStep = stage === "describe" ? 0 : stage === "questions" ? 1 : 2;
   const descriptionReady = description.trim().length >= 12;
-
-  const effectiveCurrency: CurrencyCode =
-    currencyOverride ?? detectCurrencyFromLocale();
-
-  const getLocationWithCurrency = (loc: Location): Location =>
-    ({
-      ...loc,
-      currency: effectiveCurrency,
-    }) as Location;
 
   return (
     <main
