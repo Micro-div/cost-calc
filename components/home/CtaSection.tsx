@@ -9,8 +9,8 @@ interface CtaSectionProps {
 
 export function CtaSection({ onEstimateClick }: CtaSectionProps) {
   return (
-    <section className="px-5 pb-20 sm:px-7 sm:pb-28">
-      <div className="cta-surface relative mx-auto max-w-[1200px] overflow-hidden rounded-[28px] bg-[#211e29] px-6 py-14 text-center text-white shadow-[0_24px_60px_rgba(31,27,40,0.18)] sm:px-10 sm:py-16">
+    <section className="px-5 pb-12 sm:px-7 sm:pb-20">
+      <div className="cta-surface relative mx-auto max-w-[1200px] overflow-hidden rounded-[28px] bg-[#211e29] px-5 py-10 text-center text-white shadow-[0_24px_60px_rgba(31,27,40,0.18)] sm:px-10 sm:py-16">
         <div className="cta-orb cta-orb-one" />
         <div className="cta-orb cta-orb-two" />
         <div className="relative mx-auto max-w-2xl">

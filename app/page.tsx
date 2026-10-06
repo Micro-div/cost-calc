@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+<<<<<<< HEAD
 import { CurrencySettingsModal } from "@/components/common/CurrencySettingsModal";
 import { GeneratingOverlay } from "@/components/common/GeneratingOverlay";
+=======
+>>>>>>> a817188 (fixed mobile view)
 import { Toast } from "@/components/common/Toast";
 import { CtaSection } from "@/components/home/CtaSection";
 import { EstimateResultSection } from "@/components/home/EstimateResult";
@@ -67,9 +70,6 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<EstimateItem[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [autoCurrency, setAutoCurrency] = useState(true);
-  const [manualCurrency, setManualCurrency] = useState<CurrencyCode>("USD");
   const [currencyOverride, setCurrencyOverride] = useState<CurrencyCode | null>(
     null,
   );
@@ -183,7 +183,7 @@ export default function Home() {
           shared.locationId,
           shared.sizeId,
           shared.qualityId,
-          autoCurrency ? currencyOverride : manualCurrency,
+          currencyOverride,
         ),
       );
       setStage("complete");
@@ -320,7 +320,7 @@ export default function Home() {
         locationId,
         sizeId,
         qualityId,
-        autoCurrency ? currencyOverride : manualCurrency,
+        currencyOverride,
       );
       if (titleOverride) {
         result.projectTitle = titleOverride;
@@ -524,9 +524,8 @@ export default function Home() {
   const activeStep = stage === "describe" ? 0 : stage === "questions" ? 1 : 2;
   const descriptionReady = description.trim().length >= 12;
 
-  const effectiveCurrency: CurrencyCode = autoCurrency
-    ? (currencyOverride ?? detectCurrencyFromLocale())
-    : manualCurrency;
+  const effectiveCurrency: CurrencyCode =
+    currencyOverride ?? detectCurrencyFromLocale();
 
   const getLocationWithCurrency = (loc: Location): Location =>
     ({
@@ -543,7 +542,6 @@ export default function Home() {
         mobileMenuOpen={mobileMenuOpen}
         onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
         onCloseMobileMenu={() => setMobileMenuOpen(false)}
-        onOpenSettings={() => setSettingsOpen(true)}
         onEstimateClick={resetEstimate}
         history={history}
         onLoadHistory={loadHistoryEntry}
@@ -634,23 +632,6 @@ export default function Home() {
           notify={notify}
           onSaveDraft={saveDraft}
           isEditingDraft={loadedDraftId !== null}
-        />
-      )}
-
-      {settingsOpen && (
-        <CurrencySettingsModal
-          autoCurrency={autoCurrency}
-          manualCurrency={manualCurrency}
-          currencyOverride={currencyOverride}
-          effectiveCurrency={effectiveCurrency}
-          onAutoCurrencyChange={setAutoCurrency}
-          onManualCurrencyChange={setManualCurrency}
-          onCurrencyOverrideChange={setCurrencyOverride}
-          onClose={() => setSettingsOpen(false)}
-          onReset={() => {
-            setAutoCurrency(true);
-            setCurrencyOverride(null);
-          }}
         />
       )}
 

@@ -12,7 +12,7 @@ export function WhyCostCalc({ onEstimateClick }: WhyCostCalcProps) {
   return (
     <section
       id="why-costcalc"
-      className="scroll-mt-20 bg-[#f8f8fb] py-20 sm:py-28"
+      className="scroll-mt-20 bg-[#f8f8fb] py-12 sm:py-20"
     >
       <div className="mx-auto grid max-w-[1200px] gap-12 px-5 sm:px-7 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-20">
         <div>

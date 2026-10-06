@@ -23,7 +23,7 @@ export function EstimateResultSection({
   return (
     <section
       id="estimate-result"
-      className="scroll-mt-8 border-y border-[#e8e5ed] bg-white py-16 sm:py-20"
+      className="scroll-mt-8 border-y border-[#e8e5ed] bg-white py-12 sm:py-20"
     >
       <div className="mx-auto max-w-[1200px] px-5 sm:px-7">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -44,21 +44,21 @@ export function EstimateResultSection({
             <button
               type="button"
               onClick={onNewEstimate}
-              className="rounded-xl border border-[#ddd9e3] bg-white px-4 py-2.5 text-sm font-bold text-[#4f4a57] transition hover:bg-[#f7f6f8]"
+              className="inline-flex min-h-[44px] items-center rounded-xl border border-[#ddd9e3] bg-white px-4 py-2.5 text-sm font-bold text-[#4f4a57] transition hover:bg-[#f7f6f8]"
             >
               New estimate
             </button>
             <button
               type="button"
               onClick={onSave}
-              className="rounded-xl border border-[#ddd9e3] bg-white px-4 py-2.5 text-sm font-bold text-[#4f4a57] transition hover:bg-[#f7f6f8]"
+              className="inline-flex min-h-[44px] items-center rounded-xl border border-[#ddd9e3] bg-white px-4 py-2.5 text-sm font-bold text-[#4f4a57] transition hover:bg-[#f7f6f8]"
             >
               Save
             </button>
             <button
               type="button"
               onClick={onShare}
-              className="rounded-xl border border-[#ddd9e3] bg-white px-4 py-2.5 text-sm font-bold text-[#4f4a57] transition hover:bg-[#f7f6f8]"
+              className="inline-flex min-h-[44px] items-center rounded-xl border border-[#ddd9e3] bg-white px-4 py-2.5 text-sm font-bold text-[#4f4a57] transition hover:bg-[#f7f6f8]"
             >
               <span className="flex items-center gap-2">
                 <Icon name="share" className="h-4 w-4" />
@@ -68,7 +68,7 @@ export function EstimateResultSection({
             <button
               type="button"
               onClick={onOpenQuotation}
-              className="flex items-center gap-2 rounded-xl bg-[#6754e7] px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(103,84,231,0.22)] transition hover:bg-[#5946d3]"
+              className="flex min-h-[44px] items-center gap-2 rounded-xl bg-[#6754e7] px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(103,84,231,0.22)] transition hover:bg-[#5946d3]"
             >
               <Icon name="file-text" className="h-4 w-4" />
               Create quotation
@@ -84,7 +84,7 @@ export function EstimateResultSection({
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#bdb5dc]">
                 Expected investment
               </p>
-              <p className="mt-3 text-4xl font-bold tracking-[-0.05em] sm:text-5xl">
+              <p className="mt-3 text-3xl font-bold tracking-[-0.05em] sm:text-5xl">
                 {formatCurrency(estimate.total, estimate.location)}
               </p>
               <p className="mt-2 text-sm text-[#aaa5b3]">
@@ -93,29 +93,29 @@ export function EstimateResultSection({
               </p>
 
               <div className="mt-9 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
-                <div>
+                <div className="min-w-0">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#928ca0]">
                     Low
                   </p>
-                  <p className="mt-1 text-lg font-bold">
+                  <p className="mt-1 text-base font-bold sm:text-lg">
                     {formatCompactCurrency(estimate.low, estimate.location)}
                   </p>
                 </div>
                 <div className="h-px w-5 bg-white/15 sm:w-10" />
-                <div className="text-center">
+                <div className="min-w-0 text-center">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#b9afe4]">
                     Typical
                   </p>
-                  <p className="mt-1 text-lg font-bold text-[#d7cef8]">
+                  <p className="mt-1 text-base font-bold text-[#d7cef8] sm:text-lg">
                     {formatCompactCurrency(estimate.total, estimate.location)}
                   </p>
                 </div>
                 <div className="h-px w-5 bg-white/15 sm:w-10" />
-                <div className="text-right">
+                <div className="min-w-0 text-right">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#928ca0]">
                     High
                   </p>
-                  <p className="mt-1 text-lg font-bold">
+                  <p className="mt-1 text-base font-bold sm:text-lg">
                     {formatCompactCurrency(estimate.high, estimate.location)}
                   </p>
                 </div>
@@ -336,7 +336,7 @@ export function EstimateResultSection({
           <button
             type="button"
             onClick={onOpenQuotation}
-            className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#6754e7] px-5 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(103,84,231,0.2)] transition hover:bg-[#5946d3] print:hidden"
+            className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#6754e7] px-5 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(103,84,231,0.2)] transition hover:bg-[#5946d3] print:hidden"
           >
             <Icon name="file-text" className="h-4 w-4" />
             Build quotation
