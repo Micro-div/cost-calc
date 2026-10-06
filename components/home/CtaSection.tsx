@@ -2,6 +2,7 @@
 
 import { scrollToSection } from "@/lib";
 import { Icon } from "@/components/common/Icon";
+import { Reveal } from "@/components/common/Reveal";
 
 interface CtaSectionProps {
   onEstimateClick: () => void;

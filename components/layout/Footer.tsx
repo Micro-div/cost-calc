@@ -21,9 +21,9 @@ const columns = [
   {
     title: "Support",
     links: [
-      { label: "Help", href: "#" },
-      { label: "Privacy", href: "#" },
-      { label: "Terms", href: "#" },
+      { label: "Help", href: "#" },{ label: "Privacy", href: "#" },  { label: "Terms", href: "#" },
+      
+    
     ],
   },
 ];
