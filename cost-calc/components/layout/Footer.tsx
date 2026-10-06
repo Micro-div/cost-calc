@@ -1,6 +1,6 @@
 import { Brand } from "./Brand";
 
-const linkClass = "text-[#6d6874] transition hover:text-[#312d38]";
+const linkClass = "text-white/60 transition-colors duration-200 hover:text-white";
 
 const columns = [
   {
@@ -48,70 +48,78 @@ const socials = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-[#e8e5ed] bg-white">
-      <div className="mx-auto max-w-[1200px] px-5 py-8 sm:px-7">
-       <div className="grid grid-cols-2 items-start gap-x-6 gap-y-6 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:gap-10">
-          {/* Logo, tagline, email, socials */}
-          <div className="col-span-2 max-w-sm lg:col-span-1">
-            {/* Smaller logo in the footer only */}
-          <div className="[&_img]:h-[170px] [&_img]:w-auto">
-              <Brand />
+    <footer className="w-full bg-white">
+      <style>{`
+        @keyframes wave-move { from { transform: translateX(0); } to { transform: translateX(-120px); } }
+        @keyframes drop-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
+        @keyframes ball-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+        /* Speed matched to 2sstore.com.pk footer waves: 10s / 8s / 6s */
+      `}</style>
+
+      <svg viewBox="0 0 120 28" className="-mb-px block w-full" aria-hidden="true">
+        <defs>
+          <path
+            id="wave"
+            d="M 0,10 C 30,10 30,15 60,15 90,15 90,10 120,10 150,10 150,15 180,15 210,15 210,10 240,10 v 28 h -240 z"
+          />
+        </defs>
+
+        <use href="#wave" x="0" y="-2" className="fill-black/35 animate-[wave-move_10s_linear_infinite] will-change-transform motion-reduce:animate-none" />
+        <use href="#wave" x="0" y="0" className="fill-black/60 animate-[wave-move_8s_linear_infinite_reverse] will-change-transform motion-reduce:animate-none" />
+        <g>
+          <circle cx="20" cy="2" r="1.8" className="fill-black animate-[drop-float_3s_ease-in-out_infinite] will-change-transform motion-reduce:animate-none" />
+          <circle cx="25" cy="2.5" r="1.5" className="fill-black/60 animate-[drop-float_3s_ease-in-out_infinite] [animation-delay:-1.3s] will-change-transform motion-reduce:animate-none" />
+          <circle cx="16" cy="2.8" r="1.2" className="fill-black/35 animate-[drop-float_3s_ease-in-out_infinite] [animation-delay:-2.6s] will-change-transform motion-reduce:animate-none" />
+          <use href="#wave" x="0" y="1" className="fill-black animate-[wave-move_6s_linear_infinite] will-change-transform motion-reduce:animate-none" />
+        </g>
+      </svg>
+
+      <div className="bg-black text-white">
+        <div className="mx-auto max-w-[1200px] px-5 pb-6 sm:px-7">
+          <div className="grid grid-cols-2 items-start gap-x-6 gap-y-6 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:gap-10">
+            <div className="col-span-2 max-w-sm lg:col-span-1">
+              <div className="[&_img]:h-[170px] [&_img]:w-auto [&_img]:brightness-0 [&_img]:invert">
+                <Brand />
+              </div>
+              <p className="mt-2 text-sm leading-5 text-white/60">
+                Get a clearer idea of what your project might cost.
+              </p>
+              <div className="mt-3 flex items-center gap-4">
+                <a href="mailto:hello@costcalc.com" className={`text-sm ${linkClass}`}>
+                  hello@costcalc.com
+                </a>
+                <span className="flex items-center gap-3">
+                  {socials.map((item) => (
+                    <a key={item.label} href={item.href} aria-label={item.label} className={linkClass}>
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                        <path d={item.path} />
+                      </svg>
+                    </a>
+                  ))}
+                </span>
+              </div>
             </div>
-            <p className="mt-2 text-sm leading-5 text-[#7f7a86]">
-              Get a clearer idea of what your project might cost.
-            </p>
-            <div className="mt-3 flex items-center gap-4">
-              <a
-                href="mailto:hello@costcalc.com"
-                className={`text-sm ${linkClass}`}
-              >
-                hello@costcalc.com
-              </a>
-              <span className="flex items-center gap-3">
-                {socials.map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    aria-label={item.label}
-                    className={linkClass}
-                  >
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 24 24"
-                      className="h-4 w-4"
-                      fill="currentColor"
-                    >
-                      <path d={item.path} />
-                    </svg>
-                  </a>
-                ))}
-              </span>
-            </div>
+
+            {columns.map((column) => (
+              <div key={column.title}>
+                <h2 className="text-sm font-medium text-white">{column.title}</h2>
+                <ul className="mt-3 space-y-2 text-sm">
+                  {column.links.map((link) => (
+                    <li key={link.label}>
+                      <a href={link.href} className={linkClass}>
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
 
-          {/* Link columns */}
-          {columns.map((column) => (
-            <div key={column.title}>
-              <h2 className="text-sm font-medium text-[#312d38]">
-                {column.title}
-              </h2>
-              <ul className="mt-3 space-y-2 text-sm">
-                {column.links.map((link) => (
-                  <li key={link.label}>
-                    <a href={link.href} className={linkClass}>
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom bar */}
-        <div className="mt-6 flex flex-col gap-1 border-t border-[#eeebf0] pt-4 text-xs text-[#96919c] sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 CostCalc. All rights reserved.</p>
-          <p>Estimates are approximate and not a final quotation.</p>
+          <div className="mt-6 flex flex-col gap-1 border-t border-white/15 pt-4 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 CostCalc. All rights reserved.</p>
+            <p>Estimates are approximate and not a final quotation.</p>
+          </div>
         </div>
       </div>
     </footer>
