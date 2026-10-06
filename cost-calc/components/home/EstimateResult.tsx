@@ -10,6 +10,7 @@ interface EstimateResultSectionProps {
   onSave: () => void;
   onShare: () => void;
   onOpenQuotation: () => void;
+  onNewEstimate: () => void;
 }
 
 export function EstimateResultSection({
@@ -17,6 +18,7 @@ export function EstimateResultSection({
   onSave,
   onShare,
   onOpenQuotation,
+  onNewEstimate,
 }: EstimateResultSectionProps) {
   return (
     <section
@@ -39,6 +41,13 @@ export function EstimateResultSection({
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5 print:hidden">
+            <button
+              type="button"
+              onClick={onNewEstimate}
+              className="rounded-xl border border-[#ddd9e3] bg-white px-4 py-2.5 text-sm font-bold text-[#4f4a57] transition hover:bg-[#f7f6f8]"
+            >
+              New estimate
+            </button>
             <button
               type="button"
               onClick={onSave}

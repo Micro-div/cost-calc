@@ -28,6 +28,7 @@ import {
 import type {
   CategoryId,
   CurrencyCode,
+  CustomProjectType,
   EstimateItem,
   EstimateResult,
   Location,
@@ -46,6 +47,7 @@ interface HistoryEntry {
 }
 
 const HISTORY_KEY = "costcalc-history";
+const CUSTOM_PROJECT_TYPES_KEY = "customProjectTypes";
 
 export default function Home() {
   const [description, setDescription] = useState("");
@@ -72,7 +74,17 @@ export default function Home() {
   );
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loadedDraftId, setLoadedDraftId] = useState<string | null>(null);
+  const [customDescription, setCustomDescription] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [customSummary, setCustomSummary] = useState("");
+  const [customProjectTypes, setCustomProjectTypes] = useState<CustomProjectType[]>(
+    [],
+  );
+  const [selectedCustom, setSelectedCustom] =
+    useState<CustomProjectType | null>(null);
+  const [titleOverride, setTitleOverride] = useState<string | null>(null);
+  const [errorToast, setErrorToast] = useState("");
 
   const selectedCategory = useMemo(
     () => categories.find((item) => item.id === categoryId) ?? categories[0],
@@ -88,6 +100,11 @@ export default function Home() {
     window.setTimeout(() => setToast(""), 2800);
   };
 
+  const notifyError = (message: string) => {
+    setErrorToast(message);
+    window.setTimeout(() => setErrorToast(""), 4000);
+  };
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(HISTORY_KEY);
@@ -99,6 +116,28 @@ export default function Home() {
       }
     } catch {
       // ignore corrupted history
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_PROJECT_TYPES_KEY);
+      if (!raw) return;
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      setCustomProjectTypes(
+        parsed.filter((item): item is CustomProjectType => {
+          if (typeof item !== "object" || item === null) return false;
+          const candidate = item as Record<string, unknown>;
+          return (
+            typeof candidate.name === "string" &&
+            typeof candidate.type === "string" &&
+            Array.isArray(candidate.features)
+          );
+        }),
+      );
+    } catch {
+      // ignore corrupted storage
     }
   }, []);
 
@@ -153,11 +192,107 @@ export default function Home() {
     }
   }, [currencyOverride]);
 
+  const persistCustomProjectTypes = (next: CustomProjectType[]) => {
+    setCustomProjectTypes(next);
+    try {
+      localStorage.setItem(CUSTOM_PROJECT_TYPES_KEY, JSON.stringify(next));
+    } catch {
+      // storage unavailable
+    }
+  };
+
+  const saveCustomProjectType = (type: CustomProjectType) => {
+    persistCustomProjectTypes([
+      ...customProjectTypes.filter(
+        (item) => item.name.toLowerCase() !== type.name.toLowerCase(),
+      ),
+      type,
+    ]);
+  };
+
+  const removeCustomProjectType = (name: string) => {
+    persistCustomProjectTypes(
+      customProjectTypes.filter((item) => item.name !== name),
+    );
+    if (selectedCustom?.name === name) setSelectedCustom(null);
+  };
+
+  const selectCustomType = (name: string) => {
+    const custom = customProjectTypes.find((item) => item.name === name);
+    if (!custom) return;
+    setSelectedCustom(custom);
+    setCategoryId(custom.type);
+    if (!description.trim()) {
+      setDescription(`${custom.name}: ${custom.features.join(", ")}`);
+    }
+  };
+
+  const analyzeCustomProject = async () => {
+    const text = customDescription.trim();
+    if (!text || analyzing) return;
+
+    setAnalyzing(true);
+    setCustomSummary("");
+    try {
+      const res = await fetch("/api/estimates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: text }),
+      });
+
+      const contentType = res.headers.get("content-type") ?? "";
+      if (!res.ok || !contentType.includes("application/json")) {
+        let message = "Could not analyze your project. Please try again.";
+        try {
+          const data: unknown = await res.json();
+          if (
+            typeof data === "object" &&
+            data !== null &&
+            typeof (data as { error?: unknown }).error === "string"
+          ) {
+            message = (data as { error: string }).error;
+          }
+        } catch {
+          // keep the default message
+        }
+        notifyError(message);
+        return;
+      }
+
+      const data = (await res.json()) as CustomProjectType & {
+        complexity: ProjectSizeId;
+        summary: string;
+      };
+      const customType: CustomProjectType = {
+        name: data.name,
+        type: data.type,
+        features: data.features,
+      };
+      saveCustomProjectType(customType);
+      setSelectedCustom(customType);
+      setCategoryId(data.type);
+      setSizeId(data.complexity);
+      setTitleOverride(data.name);
+      setCustomSummary(data.summary);
+      if (!description.trim()) {
+        setDescription(`${data.name}: ${data.features.join(", ")}`);
+      }
+      setCustomDescription("");
+      notify(`Analyzed: ${data.name}`);
+    } catch {
+      notifyError("Could not analyze your project. Please try again.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const beginEstimate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (description.trim().length < 12) return;
 
-    const detectedCategory = detectCategory(description);
+    const detectedCategory = selectedCustom
+      ? categoryId
+      : detectCategory(description);
     const selectedLocationId = locationSelectedManually
       ? locationId
       : detectLocation(description);
@@ -186,6 +321,10 @@ export default function Home() {
         qualityId,
         autoCurrency ? currencyOverride : manualCurrency,
       );
+      if (titleOverride) {
+        result.projectTitle = titleOverride;
+        setTitleOverride(null);
+      }
       setEstimate(result);
       setStage("complete");
       setLoadedDraftId(null);
@@ -210,6 +349,10 @@ export default function Home() {
   const resetEstimate = () => {
     window.history.replaceState(null, "", window.location.pathname);
     setDescription("");
+    setCustomDescription("");
+    setCustomSummary("");
+    setSelectedCustom(null);
+    setTitleOverride(null);
     setCategoryId("web");
     setLocationId("us");
     setLocationSelectedManually(false);
@@ -225,6 +368,7 @@ export default function Home() {
   const chooseCategory = (id: CategoryId) => {
     const category = categories.find((item) => item.id === id) ?? categories[0];
     setCategoryId(id);
+    setSelectedCustom(null);
     setStage("describe");
     setLoadedDraftId(null);
     if (!description.trim()) setDescription(category.example);
@@ -333,6 +477,7 @@ export default function Home() {
       const est = entry.data as EstimateResult;
       setDescription(est.description);
       setCategoryId(est.category.id);
+      setSelectedCustom(null);
       setLocationId(est.location.id);
       setSizeId(est.size.id);
       setQualityId(est.quality.id);
@@ -398,7 +543,7 @@ export default function Home() {
         onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
         onCloseMobileMenu={() => setMobileMenuOpen(false)}
         onOpenSettings={() => setSettingsOpen(true)}
-        onEstimateClick={() => scrollToSection("estimator")}
+        onEstimateClick={resetEstimate}
         history={history}
         onLoadHistory={loadHistoryEntry}
         onDeleteHistory={deleteHistoryEntry}
@@ -419,7 +564,22 @@ export default function Home() {
         selectedCategory={selectedCategory}
         selectedLocation={selectedLocation}
         onDescriptionChange={setDescription}
-        onCategoryChange={setCategoryId}
+        customDescription={customDescription}
+        onCategoryChange={(id) => {
+          setCategoryId(id);
+          setSelectedCustom(null);
+        }}
+        onCustomDescriptionChange={(value) => {
+          setCustomDescription(value);
+          setCustomSummary("");
+        }}
+        onAnalyzeCustom={analyzeCustomProject}
+        analyzing={analyzing}
+        customProjectTypes={customProjectTypes}
+        selectedCustom={selectedCustom}
+        onSelectCustomType={selectCustomType}
+        onRemoveCustomType={removeCustomProjectType}
+        customSummary={customSummary}
         onLocationChange={(id) => {
           setLocationId(id);
           setLocationSelectedManually(true);
@@ -436,8 +596,9 @@ export default function Home() {
           }
         }}
         onContinueQuestions={continueQuestions}
-        onViewEstimate={() => scrollToSection("estimate-result")}
         isGenerating={isGenerating}
+        onViewEstimate={() => scrollToSection("estimate-result")}
+        onNewEstimate={resetEstimate}
       />
 
       {estimate && (
@@ -446,6 +607,7 @@ export default function Home() {
           onSave={saveEstimate}
           onShare={shareEstimate}
           onOpenQuotation={openQuotation}
+          onNewEstimate={resetEstimate}
         />
       )}
 
@@ -492,6 +654,7 @@ export default function Home() {
       )}
 
       <Toast message={toast} />
+      <Toast message={errorToast} error />
     </main>
   );
 }
