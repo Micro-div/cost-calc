@@ -12,6 +12,7 @@ import { WhyCostCalc } from "@/components/home/WhyCostCalc";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { QuoteModal } from "@/components/quotation/QuoteModal";
+import { ShareModal } from "@/components/share/ShareModal";
 import {
   categories,
   locations,
@@ -62,6 +63,7 @@ export default function Home() {
   );
   const [estimate, setEstimate] = useState<EstimateResult | null>(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [quoteItems, setQuoteItems] = useState<EstimateItem[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState("");
@@ -408,6 +410,7 @@ export default function Home() {
     setStage("describe");
     setEstimate(null);
     setLoadedDraftId(null);
+    setShareOpen(false);
     window.setTimeout(() => scrollToSection("estimator"), 50);
   };
 
@@ -430,8 +433,8 @@ export default function Home() {
     setQuoteOpen(true);
   };
 
-  const shareEstimate = async () => {
-    if (!estimate) return;
+  // Builds the link that rebuilds this estimate when someone opens it.
+  const buildShareUrl = () => {
     const payload: SharedEstimate = {
       description,
       categoryId,
@@ -441,13 +444,13 @@ export default function Home() {
     };
     const url = new URL(window.location.href);
     url.hash = `estimate=${encodeURIComponent(JSON.stringify(payload))}`;
+    return url.toString();
+  };
 
-    try {
-      await navigator.clipboard.writeText(url.toString());
-      notify("Shareable estimate link copied");
-    } catch {
-      window.prompt("Copy your estimate link:", url.toString());
-    }
+  // The Share button now opens the share popup instead of only copying the link.
+  const shareEstimate = () => {
+    if (!estimate) return;
+    setShareOpen(true);
   };
 
   const saveEstimate = () => {
@@ -688,6 +691,15 @@ export default function Home() {
         />
       )}
 
+      {shareOpen && estimate && (
+        <ShareModal
+          estimate={estimate}
+          shareUrl={buildShareUrl()}
+          onClose={() => setShareOpen(false)}
+          notify={notify}
+          onDownloadPdf={openQuotation}
+        />
+      )}
       <Toast message={toast} />
       <Toast message={errorToast} error />
 

@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Loader } from "./Loader";
 
-const MIN_DISPLAY_TIME = 2200;
+const MIN_DISPLAY_TIME = 2000;
 const FADE_OUT_DURATION = 600;
 
 export function LoadingWrapper({ children }: { children: ReactNode }) {
@@ -25,7 +25,11 @@ export function LoadingWrapper({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {loading && <Loader fading={fading} />}
+      {loading && (
+        <div className={fading ? "loader-fade-wrapper loader-fade-wrapper--fading" : "loader-fade-wrapper"}>
+          <Loader />
+        </div>
+      )}
       {!loading && children}
     </>
   );
