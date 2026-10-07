@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
   categories,
@@ -36,6 +37,7 @@ export interface EstimatorProps {
   selectedCategory: Category;
   selectedLocation: Location;
   onDescriptionChange: (value: string) => void;
+  autoCategoryHint?: string | null;
   onCategoryChange: (id: CategoryId) => void;
   onLocationChange: (id: LocationId) => void;
   onSizeChange: (id: ProjectSizeId) => void;
@@ -57,36 +59,63 @@ export interface EstimatorProps {
   customSummary: string;
 }
 
-/* Slide-in animation settings: change these 3 values to adjust it */
+/* Entrance animation: desktop slides in from the right, mobile slides up from the bottom.
+   The negative delay makes the motion already "in progress" at first paint (no pause). */
 const slideInCss = `
   :root {
     --estimator-slide-distance: 160px;
     --estimator-slide-duration: 1.6s;
-    --estimator-slide-delay: 0.2s;
+    --estimator-slide-delay: -0.25s;
   }
 
-  @keyframes estimatorSlideIn {
+  @keyframes estimatorSlideInRight {
     from {
       opacity: 0;
-      transform: translateX(var(--estimator-slide-distance));
+      transform: translate3d(var(--estimator-slide-distance), 0, 0);
     }
     to {
       opacity: 1;
-      transform: translateX(0);
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes estimatorSlideInUp {
+    from {
+      opacity: 0;
+      transform: translate3d(0, var(--estimator-slide-distance), 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
     }
   }
 
   @media (prefers-reduced-motion: no-preference) {
     .estimator-card {
-      animation: estimatorSlideIn var(--estimator-slide-duration)
-        cubic-bezier(0.22, 1, 0.36, 1) var(--estimator-slide-delay) backwards;
+      animation: estimatorSlideInRight var(--estimator-slide-duration)
+        cubic-bezier(0.22, 1, 0.36, 1) var(--estimator-slide-delay) both;
       will-change: transform, opacity;
     }
   }
 
+  /* Mobile: stay hidden until scrolled into view, then slide up from the bottom */
   @media (max-width: 767px) {
     :root {
-      --estimator-slide-distance: 50px;
+      --estimator-slide-distance: 90px;
+      --estimator-slide-duration: 1.2s;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .estimator-card {
+        animation: none;
+      }
+      .estimator-card[data-revealed="false"] {
+        opacity: 0;
+        transform: translate3d(0, var(--estimator-slide-distance), 0);
+      }
+      .estimator-card[data-revealed="true"] {
+        animation: estimatorSlideInUp var(--estimator-slide-duration)
+          cubic-bezier(0.22, 1, 0.36, 1) 0s both;
+      }
     }
   }
 
@@ -110,6 +139,7 @@ export function Estimator({
   selectedCategory,
   selectedLocation,
   onDescriptionChange,
+  autoCategoryHint,
   onCategoryChange,
   onLocationChange,
   onSizeChange,
@@ -130,10 +160,36 @@ export function Estimator({
   onRemoveCustomType,
   customSummary,
 }: EstimatorProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const node = cardRef.current;
+    if (!node) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setRevealed(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setRevealed(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
       <style>{slideInCss}</style>
-      <div className="estimator-card relative overflow-hidden rounded-[26px] border border-white/90 bg-white p-3 shadow-[0_30px_90px_rgba(45,38,74,0.14)] sm:p-4">
+      <div
+        ref={cardRef}
+        data-revealed={revealed}
+        className="estimator-card relative overflow-hidden rounded-[26px] border border-white/90 bg-white p-3 shadow-[0_30px_90px_rgba(45,38,74,0.14)] sm:p-4">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#6754e7] via-[#9a7cf1] to-[#5cc8aa]" />
         <div className="px-2 pb-3 pt-2 sm:px-3 sm:pb-4 sm:pt-3">
           <div className="flex items-center justify-between gap-4">
@@ -249,6 +305,12 @@ export function Estimator({
                     />
                   </span>
                 </label>
+                {autoCategoryHint && !selectedCustom && (
+                  <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-[#6d58db]">
+                    <Icon name="sparkles" className="h-3 w-3" />
+                    Auto-detected: {autoCategoryHint}
+                  </p>
+                )}
                 {selectedCustom && (
                   <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-[#f0edff] px-2.5 py-1.5">
                     <span className="truncate text-[11px] font-semibold text-[#604fc6]">
