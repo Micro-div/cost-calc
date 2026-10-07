@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { GeneratingOverlay } from "@/components/common/GeneratingOverlay";
 import { Toast } from "@/components/common/Toast";
 import { CtaSection } from "@/components/home/CtaSection";
@@ -20,10 +20,11 @@ import {
 } from "@/constants";
 import {
   calculateEstimate,
-  detectCategory,
   detectLocation,
   scrollToSection,
 } from "@/lib";
+import { fetchAiAnalysis, getCachedAiAnalysis } from "@/lib/aiAnalysis";
+import { analyzeProject, analyzeProjectWithAi } from "@/lib/analyzeProject";
 import type {
   CategoryId,
   CurrencyCode,
@@ -80,6 +81,10 @@ export default function Home() {
     useState<CustomProjectType | null>(null);
   const [titleOverride, setTitleOverride] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState("");
+  const [categoryManual, setCategoryManual] = useState(false);
+  const [autoCategory, setAutoCategory] = useState<string | null>(null);
+  // Guards against stale AI responses: only the newest request may apply.
+  const aiRequestRef = useRef(0);
 
   const selectedCategory = useMemo(
     () => categories.find((item) => item.id === categoryId) ?? categories[0],
@@ -135,6 +140,44 @@ export default function Home() {
       // ignore corrupted storage
     }
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem("costcalc-latest-estimate");
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // While typing, auto-select the detected category in the dropdown.
+  // Once the user picks a category manually, stop overriding it.
+  // The rule-based pass stays instant; after the same debounce an optional
+  // AI pass (POST /api/analyze, server-side Groq) refines the analysis input
+  // (category, features, complexity, subject, heading, confidence). It is
+  // cached by normalized text, so repeat input never calls the API twice;
+  // any failure/timeout/stale response silently falls back to rule-based.
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      const text = description.trim();
+      if (text.length < 8) {
+        setAutoCategory(null);
+        return;
+      }
+      const analysis = analyzeProject(text);
+      if (!categoryManual) {
+        setCategoryId(analysis.categoryId as CategoryId);
+        setAutoCategory(analysis.category);
+      }
+      const requestId = ++aiRequestRef.current;
+      void fetchAiAnalysis(text).then((ai) => {
+        if (!ai || requestId !== aiRequestRef.current || categoryManual) return;
+        const refined = analyzeProjectWithAi(text, ai);
+        setCategoryId(refined.categoryId as CategoryId);
+        setAutoCategory(refined.category);
+      });
+    }, 400);
+    return () => window.clearTimeout(handle);
+  }, [description, categoryManual]);
 
   useEffect(() => {
     if (!window.location.hash.startsWith("#estimate=")) return;
@@ -288,7 +331,7 @@ export default function Home() {
 
     const detectedCategory = selectedCustom
       ? categoryId
-      : detectCategory(description);
+      : (analyzeProject(description).categoryId as CategoryId);
     const selectedLocationId = locationSelectedManually
       ? locationId
       : detectLocation(description);
@@ -309,6 +352,10 @@ export default function Home() {
     setIsGenerating(true);
 
     window.setTimeout(() => {
+      // Use the AI analysis (if it arrived in time) as the analysis input;
+      // ALL prices, breakdown, scope, assumptions, timeline, taxes and
+      // currency conversion are still computed by the static USD config.
+      const aiAnalysis = getCachedAiAnalysis(description);
       const result = calculateEstimate(
         description,
         categoryId,
@@ -316,6 +363,7 @@ export default function Home() {
         sizeId,
         qualityId,
         currencyOverride,
+        aiAnalysis,
       );
       if (titleOverride) {
         result.projectTitle = titleOverride;
@@ -349,6 +397,8 @@ export default function Home() {
     setCustomSummary("");
     setSelectedCustom(null);
     setTitleOverride(null);
+    setCategoryManual(false);
+    setAutoCategory(null);
     setCategoryId("web");
     setLocationId("us");
     setLocationSelectedManually(false);
@@ -365,6 +415,8 @@ export default function Home() {
     const category = categories.find((item) => item.id === id) ?? categories[0];
     setCategoryId(id);
     setSelectedCustom(null);
+    setCategoryManual(true);
+    setAutoCategory(null);
     setStage("describe");
     setLoadedDraftId(null);
     if (!description.trim()) setDescription(category.example);
@@ -416,10 +468,6 @@ export default function Home() {
     ].slice(0, 50);
     setHistory(updated);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-    localStorage.setItem(
-      "costcalc-latest-estimate",
-      JSON.stringify({ ...estimate, savedAt: new Date().toISOString() }),
-    );
     notify("Estimate saved on this device");
   };
 
@@ -468,9 +516,25 @@ export default function Home() {
     notify("Draft saved on this device");
   };
 
+  // Older saved estimates may predate the analyzer-driven fields.
+  // Re-run them through the current calculator so they never override
+  // the new result format.
+  const refreshEstimate = (est: EstimateResult): EstimateResult => {
+    if (Array.isArray(est.scope) && Array.isArray(est.assumptions)) {
+      return est;
+    }
+    return calculateEstimate(
+      est.description,
+      est.category?.id ?? "web",
+      est.location?.id ?? "us",
+      est.size?.id ?? "medium",
+      est.quality?.id ?? "standard",
+    );
+  };
+
   const loadHistoryEntry = (entry: HistoryEntry) => {
     if (entry.type === "estimate") {
-      const est = entry.data as EstimateResult;
+      const est = refreshEstimate(entry.data as EstimateResult);
       setDescription(est.description);
       setCategoryId(est.category.id);
       setSelectedCustom(null);
@@ -485,7 +549,7 @@ export default function Home() {
       const draftData = entry.data;
       // Auto-saved draft mein full EstimateResult hota hai
       if ("projectTitle" in draftData) {
-        const est = draftData as EstimateResult;
+        const est = refreshEstimate(draftData as EstimateResult);
         setDescription(est.description);
         setCategoryId(est.category.id);
         setLocationId(est.location.id);
@@ -549,10 +613,13 @@ export default function Home() {
         selectedCategory={selectedCategory}
         selectedLocation={selectedLocation}
         onDescriptionChange={setDescription}
+        autoCategoryHint={categoryManual ? null : autoCategory}
         customDescription={customDescription}
         onCategoryChange={(id) => {
           setCategoryId(id);
           setSelectedCustom(null);
+          setCategoryManual(true);
+          setAutoCategory(null);
         }}
         onCustomDescriptionChange={(value) => {
           setCustomDescription(value);

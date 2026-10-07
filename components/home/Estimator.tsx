@@ -37,6 +37,7 @@ export interface EstimatorProps {
   selectedCategory: Category;
   selectedLocation: Location;
   onDescriptionChange: (value: string) => void;
+  autoCategoryHint?: string | null;
   onCategoryChange: (id: CategoryId) => void;
   onLocationChange: (id: LocationId) => void;
   onSizeChange: (id: ProjectSizeId) => void;
@@ -45,6 +46,7 @@ export interface EstimatorProps {
   onBack: () => void;
   onContinueQuestions: () => void;
   onViewEstimate: () => void;
+  isGenerating?: boolean;
   onNewEstimate: () => void;
   customDescription: string;
   onCustomDescriptionChange: (value: string) => void;
@@ -137,6 +139,7 @@ export function Estimator({
   selectedCategory,
   selectedLocation,
   onDescriptionChange,
+  autoCategoryHint,
   onCategoryChange,
   onLocationChange,
   onSizeChange,
@@ -301,6 +304,12 @@ export function Estimator({
                     />
                   </span>
                 </label>
+                {autoCategoryHint && !selectedCustom && (
+                  <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-[#6d58db]">
+                    <Icon name="sparkles" className="h-3 w-3" />
+                    Auto-detected: {autoCategoryHint}
+                  </p>
+                )}
                 {selectedCustom && (
                   <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-[#f0edff] px-2.5 py-1.5">
                     <span className="truncate text-[11px] font-semibold text-[#604fc6]">

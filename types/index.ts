@@ -72,6 +72,9 @@ export interface EstimateResult {
   confidence: number;
   durationMin: number;
   durationMax: number;
+  scope: string[];
+  assumptions: string[];
+  complexity: string;
 }
 
 export interface SharedEstimate {

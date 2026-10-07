@@ -1,6 +1,5 @@
 "use client";
 
-import { assumptions, scopeByCategory } from "@/constants";
 import { formatCompactCurrency, formatCurrency } from "@/lib";
 import type { EstimateResult as EstimateResultData } from "@/types";
 import { Icon } from "@/components/common/Icon";
@@ -37,8 +36,14 @@ export function EstimateResultSection({
             </h2>
             <p className="mt-2 text-sm text-[#77727e]">
               {estimate.category.name} · {estimate.location.city},{" "}
-              {estimate.location.country} · {estimate.size.name} scope
+              {estimate.location.country} · {estimate.size.name} scope ·{" "}
+              {estimate.complexity} complexity
             </p>
+            {estimate.description.trim() && (
+              <p className="mt-1.5 max-w-2xl truncate text-xs text-[#a19ba8]">
+                “{estimate.description.trim()}”
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2.5 print:hidden">
             <button
@@ -152,8 +157,20 @@ export function EstimateResultSection({
                   Based on project detail, scope and local pricing.
                 </p>
               </div>
-              <span className="rounded-full bg-[#e5f6ed] px-2.5 py-1 text-[11px] font-bold text-[#198454]">
-                High
+              <span
+                className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                  estimate.confidence >= 70
+                    ? "bg-[#e5f6ed] text-[#198454]"
+                    : estimate.confidence >= 50
+                      ? "bg-[#fff4e0] text-[#a8741a]"
+                      : "bg-[#fbe9e7] text-[#b4402e]"
+                }`}
+              >
+                {estimate.confidence >= 70
+                  ? "High"
+                  : estimate.confidence >= 50
+                    ? "Medium"
+                    : "Low"}
               </span>
             </div>
             <div className="mt-6 flex items-end gap-3">
@@ -170,6 +187,12 @@ export function EstimateResultSection({
                 style={{ width: `${estimate.confidence}%` }}
               />
             </div>
+            {estimate.confidence < 50 && (
+              <p className="mt-3 rounded-xl border border-[#f3d9c8] bg-[#fff6ee] px-3 py-2 text-[11px] font-medium leading-5 text-[#a05a2c]">
+                Low detail — add more about features, platform and users to
+                sharpen this estimate.
+              </p>
+            )}
             <div className="mt-6 grid grid-cols-2 gap-3">
               <div className="rounded-2xl border border-[#e7e3eb] bg-white p-3.5">
                 <Icon name="layers" className="h-4 w-4 text-[#6c57db]" />
@@ -284,7 +307,7 @@ export function EstimateResultSection({
               </span>
             </div>
             <div className="mt-6 space-y-3">
-              {scopeByCategory[estimate.category.id].map((item, index) => (
+              {estimate.scope.map((item, index) => (
                 <div
                   key={item}
                   className="flex items-start gap-3 rounded-2xl bg-[#faf9fb] p-3.5"
@@ -304,7 +327,7 @@ export function EstimateResultSection({
                 Key assumptions
               </p>
               <ul className="mt-3 space-y-2">
-                {assumptions.slice(0, 3).map((item) => (
+                {estimate.assumptions.slice(0, 4).map((item) => (
                   <li
                     key={item}
                     className="flex items-start gap-2 text-xs leading-5 text-[#746657]"

@@ -6,7 +6,6 @@ import {
   USD_RATES,
 } from "@/constants";
 import type {
-  Category,
   CategoryId,
   CurrencyCode,
   EstimateItem,
@@ -16,6 +15,8 @@ import type {
   ProjectSizeId,
   QualityId,
 } from "@/types";
+import { analyzeProjectWithAi } from "./analyzeProject";
+import type { AiAnalysisPayload } from "./aiAnalysis";
 
 export function roundMoney(value: number) {
   return Math.round(value);
@@ -45,72 +46,6 @@ export function formatCompactCurrency(value: number, location: Location) {
   return `${symbol}${Math.round(value)}`;
 }
 
-export function detectCategory(description: string): CategoryId {
-  const value = description.toLowerCase();
-  const matches: Array<{ words: string[]; id: CategoryId }> = [
-    {
-      words: ["ecommerce", "e-commerce", "online store", "shopify", "checkout"],
-      id: "ecommerce",
-    },
-    {
-      words: ["mobile app", "android", "ios", "fitness app", "application"],
-      id: "mobile",
-    },
-    {
-      words: [
-        "ai ",
-        "artificial intelligence",
-        "automation",
-        "assistant",
-        "chatbot",
-      ],
-      id: "ai",
-    },
-    {
-      words: [
-        "logo",
-        "branding",
-        "brand identity",
-        "visual identity",
-        "coffee brand",
-      ],
-      id: "branding",
-    },
-    {
-      words: ["ui", "ux", "prototype", "wireframe", "product design"],
-      id: "design",
-    },
-    {
-      words: ["seo", "search engine", "organic traffic", "ranking"],
-      id: "seo",
-    },
-    {
-      words: [
-        "social media",
-        "instagram",
-        "content calendar",
-        "posts per month",
-      ],
-      id: "social",
-    },
-    {
-      words: [
-        "website",
-        "web app",
-        "web application",
-        "landing page",
-        "portfolio",
-      ],
-      id: "web",
-    },
-  ];
-
-  return (
-    matches.find(({ words }) => words.some((word) => value.includes(word)))
-      ?.id ?? "web"
-  );
-}
-
 export function detectLocation(description: string): LocationId {
   const value = description.toLowerCase();
   const matches: Array<{ words: string[]; id: LocationId }> = [
@@ -135,16 +70,6 @@ export function detectLocation(description: string): LocationId {
   );
 }
 
-export function getProjectTitle(description: string, category: Category) {
-  const cleaned = description
-    .trim()
-    .replace(/^(i need|we need|please create|i want|we want)\s+/i, "")
-    .replace(/[.!?]+$/, "");
-
-  if (cleaned.length < 20 || cleaned.length > 76) return category.shortName;
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-}
-
 export function calculateEstimate(
   description: string,
   categoryId: CategoryId,
@@ -152,7 +77,12 @@ export function calculateEstimate(
   sizeId: ProjectSizeId,
   qualityId: QualityId,
   currencyOverride?: CurrencyCode | null,
+  aiAnalysis?: AiAnalysisPayload | null,
 ): EstimateResult {
+  // The optional AI result only supplies category/features/complexity/subject/
+  // heading/confidence; every price below is still computed from the static
+  // USD config (PROJECT_TYPES / FEATURES / COMPLEXITY in analyzeProject.js).
+  const analysis = analyzeProjectWithAi(description, aiAnalysis);
   const category =
     categories.find((item) => item.id === categoryId) ?? categories[0];
   const rawLocation =
@@ -165,45 +95,15 @@ export function calculateEstimate(
   const quality =
     qualityOptions.find((item) => item.id === qualityId) ?? qualityOptions[1];
 
-  const projectTotal =
-    category.base * location.multiplier * size.multiplier * quality.multiplier;
-  const lineItemShares = [0.14, 0.16, 0.42, 0.16, 0.12];
-  const lineItemDetails = [
-    {
-      name: "Discovery & strategy",
-      detail: "Requirements, research and project plan",
-      quantity: 1,
-    },
-    {
-      name: "UX & UI design",
-      detail: "Wireframes, interface design and prototype",
-      quantity: 28,
-    },
-    {
-      name: "Development",
-      detail: "Responsive build, features and integrations",
-      quantity: Math.round(category.hours * 0.62),
-    },
-    {
-      name: "Quality assurance",
-      detail: "Testing, fixes and launch checks",
-      quantity: 28,
-    },
-    {
-      name: "Project management",
-      detail: "Communication, coordination and handover",
-      quantity: 16,
-    },
-  ];
-  const items: EstimateItem[] = lineItemDetails.map((item, index) => {
-    const amountUsd = projectTotal * lineItemShares[index];
-    return {
-      name: item.name,
-      detail: item.detail,
-      quantity: item.quantity,
-      rate: roundMoney((amountUsd * fx) / item.quantity),
-    };
-  });
+  // New analyzer-driven base price; country, size and quality multipliers
+  // (and later the currency conversion, contingency and tax) still apply.
+  const multiplier = location.multiplier * size.multiplier * quality.multiplier;
+  const items: EstimateItem[] = analysis.lines.map((line) => ({
+    name: line.label,
+    detail: line.detail,
+    quantity: 1,
+    rate: roundMoney(line.usd * multiplier * fx),
+  }));
   const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.rate,
     0,
@@ -211,14 +111,22 @@ export function calculateEstimate(
   const contingency = roundMoney(subtotal * 0.05);
   const taxes = roundMoney((subtotal + contingency) * location.taxRate);
   const total = subtotal + contingency + taxes;
-  const baseWeeks = category.weeks * size.weekFactor * quality.weekFactor;
+  const weekFactor = size.weekFactor * quality.weekFactor;
+  const durationMin = Math.max(
+    1,
+    Math.round(analysis.weeksMin * weekFactor),
+  );
+  const durationMax = Math.max(
+    durationMin + 1,
+    Math.round(analysis.weeksMax * weekFactor),
+  );
   const confidence = Math.min(
     94,
-    80 + Math.min(12, Math.floor(description.length / 10)),
+    Math.max(20, Math.round(analysis.confidence * 100)),
   );
 
   return {
-    projectTitle: getProjectTitle(description, category),
+    projectTitle: analysis.heading,
     description,
     category,
     location,
@@ -232,8 +140,11 @@ export function calculateEstimate(
     low: roundMoney(total * 0.88),
     high: roundMoney(total * 1.17),
     confidence,
-    durationMin: Math.max(1, Math.round(baseWeeks * 0.8)),
-    durationMax: Math.max(2, Math.round(baseWeeks * 1.2)),
+    durationMin,
+    durationMax,
+    scope: analysis.scope,
+    assumptions: analysis.assumptions,
+    complexity: analysis.complexity,
   };
 }
 

@@ -1,5 +1,4 @@
 import type {
-  CategoryId,
   CurrencyCode,
   LocationId,
   ProjectSizeId,
@@ -246,64 +245,6 @@ export const qualityOptions = [
     weekFactor: 1.2,
   },
 ] as const;
-
-export const scopeByCategory: Record<CategoryId, string[]> = {
-  web: [
-    "Discovery, content plan and project roadmap",
-    "Responsive page designs and reusable components",
-    "Front-end build, forms and CMS integration",
-    "Testing, launch and team handover",
-  ],
-  mobile: [
-    "Product flows, wireframes and user journeys",
-    "Reusable mobile UI and design system",
-    "Cross-platform build and backend integration",
-    "Store submission, testing and launch support",
-  ],
-  ecommerce: [
-    "Catalog, customer and checkout experience",
-    "Payments, tax, shipping and inventory setup",
-    "Responsive storefront and product administration",
-    "Testing, analytics and staff training",
-  ],
-  design: [
-    "User research and stakeholder workshop",
-    "Information architecture and user flows",
-    "High-fidelity interface design",
-    "Clickable prototype and design handover",
-  ],
-  seo: [
-    "Technical SEO audit and opportunity review",
-    "Keyword and content strategy",
-    "On-page recommendations and implementation",
-    "Ranking setup and progress reporting",
-  ],
-  social: [
-    "Audience research and monthly content plan",
-    "Creative production and publishing calendar",
-    "Community response and channel monitoring",
-    "Monthly performance review and report",
-  ],
-  branding: [
-    "Brand discovery and positioning workshop",
-    "Logo exploration and visual direction",
-    "Color, typography and supporting assets",
-    "Brand guidelines and final file handover",
-  ],
-  ai: [
-    "Use-case validation and technical discovery",
-    "Data, model and integration architecture",
-    "AI workflow build and evaluation suite",
-    "Security testing, monitoring and handover",
-  ],
-};
-
-export const assumptions = [
-  "One approved round of revisions is included per deliverable",
-  "You will provide copy, brand assets and feedback on schedule",
-  "The estimate assumes normal working hours and normal project access",
-  "Third-party subscriptions and ongoing monthly services are excluded",
-];
 
 export const allCurrencies = [
   "USD",
