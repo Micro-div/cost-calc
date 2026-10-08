@@ -213,12 +213,7 @@ input[type="number"] {
   display: flex;
   align-items: center;
   justify-content: center;
-<<<<<<< HEAD:cost-calc/app/globals.css
   background: #ffffff;
-=======
-  background: #f8f8fb;
-  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
->>>>>>> 352350a9cb569c2fd8e202563a43fd4bfaa9bfd2:app/globals.css
   overflow: hidden;
 }
 
@@ -237,7 +232,6 @@ input[type="number"] {
   pointer-events: none;
 }
 
-<<<<<<< HEAD:cost-calc/app/globals.css
 .loader {
   --bg-color: #ffffff;
   color: rgb(124, 124, 124);
@@ -256,56 +250,6 @@ input[type="number"] {
 
 .loader-words {
   overflow: hidden;
-=======
-/* Mesh gradient background — purple + teal tinted */
-.loader-bg-mesh {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(103, 84, 231, 0.10), transparent),
-    radial-gradient(ellipse 60% 80% at 85% 80%, rgba(92, 200, 170, 0.08), transparent),
-    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(154, 124, 241, 0.05), transparent);
-  animation: loaderMeshShift 12s ease-in-out infinite alternate;
-  pointer-events: none;
-}
-
-/* Aurora effects */
-.loader-aurora {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(100px);
-  pointer-events: none;
-}
-
-.loader-aurora-one {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(103, 84, 231, 0.18), transparent 70%);
-  top: -150px;
-  left: -150px;
-  animation: loaderAurora1 11s ease-in-out infinite;
-}
-
-.loader-aurora-two {
-  width: 440px;
-  height: 440px;
-  background: radial-gradient(circle, rgba(92, 200, 170, 0.14), transparent 70%);
-  bottom: -130px;
-  right: -120px;
-  animation: loaderAurora2 13s ease-in-out infinite;
-}
-
-.loader-aurora-three {
-  width: 320px;
-  height: 320px;
-  background: radial-gradient(circle, rgba(154, 124, 241, 0.10), transparent 70%);
-  top: 35%;
-  left: 55%;
-  animation: loaderAurora3 9s ease-in-out infinite;
-}
-
-.loader-content {
->>>>>>> 352350a9cb569c2fd8e202563a43fd4bfaa9bfd2:app/globals.css
   position: relative;
 }
 
@@ -390,7 +334,6 @@ input[type="number"] {
   display: flex;
   flex-direction: column;
   align-items: center;
-<<<<<<< HEAD:cost-calc/app/globals.css
   gap: 22px;
   color: #3432ff;
 }
@@ -412,119 +355,6 @@ input[type="number"] {
 
 @media (prefers-reduced-motion: reduce) {
   .reveal {
-=======
-  gap: 30px;
-  z-index: 1;
-}
-
-/* Circular progress ring */
-.loader-ring-container {
-  position: relative;
-  width: 132px;
-  height: 132px;
-  opacity: 0;
-  animation: loaderFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards;
-}
-
-.loader-ring {
-  width: 100%;
-  height: 100%;
-  transform: rotate(0deg);
-}
-
-.loader-ring-progress {
-  transition: stroke-dashoffset 0.12s linear;
-}
-
-.loader-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-}
-
-.loader-logo-mark {
-  width: 42px;
-  height: 42px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #6754e7, #9a7cf1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 4px 18px rgba(103, 84, 231, 0.32),
-    0 2px 6px rgba(154, 124, 241, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  animation: loaderLogoPulse 2.6s ease-in-out infinite;
-}
-
-.loader-logo-icon {
-  width: 20px;
-  height: 20px;
-  color: #fff;
-}
-
-.loader-percentage {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: rgba(31, 28, 41, 0.45);
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-}
-
-.loader-wordmark {
-  display: inline-flex;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 42px;
-  font-weight: 700;
-  letter-spacing: -0.06em;
-  line-height: 1;
-  opacity: 0;
-  transform: translateY(16px);
-  animation: loaderFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.28s forwards;
-}
-
-.loader-word-cost {
-  color: #231f2b;
-}
-
-.loader-word-calc {
-  background: linear-gradient(135deg, #6754e7, #9a7cf1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.loader-status-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  opacity: 0;
-  animation: loaderFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.48s forwards;
-}
-
-.loader-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #6754e7;
-  box-shadow: 0 0 10px rgba(103, 84, 231, 0.65);
-  animation: loaderDotPulse 1.6s ease-in-out infinite;
-}
-
-.loader-status-text {
-  font-size: 13px;
-  color: rgba(31, 28, 41, 0.5);
-  letter-spacing: 0.04em;
-  font-weight: 500;
-}
-
-@keyframes loaderFadeUp {
-  to {
->>>>>>> 352350a9cb569c2fd8e202563a43fd4bfaa9bfd2:app/globals.css
     opacity: 1;
     transform: none;
     transition: none;

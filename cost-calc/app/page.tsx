@@ -624,8 +624,6 @@ export default function Home() {
         />
       )}
 
-<<<<<<< HEAD:cost-calc/app/page.tsx
-=======
       {shareOpen && estimate && (
         <ShareModal
           estimate={estimate}
@@ -635,8 +633,6 @@ export default function Home() {
           onDownloadPdf={openQuotation}
         />
       )}
-
->>>>>>> 352350a9cb569c2fd8e202563a43fd4bfaa9bfd2:app/page.tsx
       <Toast message={toast} />
       <Toast message={errorToast} error />
 
