@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { formatCurrency, roundMoney } from "@/lib";
 import type { EstimateItem, EstimateResult } from "@/types";
 import { Icon } from "@/components/common/Icon";
@@ -26,6 +26,11 @@ export function QuoteModal({
 }: QuoteModalProps) {
   const [businessName, setBusinessName] = useState("Your Company");
   const [customerName, setCustomerName] = useState("");
+  // Generated once per modal open (useMemo, not per render).
+  const quoteNumber = useMemo(
+    () => `QF-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`,
+    [],
+  );
   const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.rate,
     0,
@@ -103,7 +108,7 @@ export function QuoteModal({
             </div>
             <div className="rounded-2xl bg-[#f5f3fb] px-5 py-4 text-sm sm:min-w-48">
               <p className="font-semibold text-[#26232e]">
-                Quotation QF-2026-0248
+                Quotation {quoteNumber}
               </p>
               <p className="mt-1 text-[#777481]">Valid for 30 days</p>
               <span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${isEditingDraft ? "bg-[#e9f8f0] text-[#188052]" : "bg-[#e5f6ed] text-[#188052]"}`}>

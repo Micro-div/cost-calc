@@ -1,9 +1,10 @@
 "use client";
 
-import { assumptions, scopeByCategory } from "@/constants";
+import { assumptions, PRICING_UPDATED, scopeByCategory } from "@/constants";
 import { formatCompactCurrency, formatCurrency } from "@/lib";
 import type { EstimateResult as EstimateResultData } from "@/types";
 import { Icon } from "@/components/common/Icon";
+import AiEstimateDetail from "./AiEstimateDetail";
 
 interface EstimateResultSectionProps {
   estimate: EstimateResultData;
@@ -192,7 +193,7 @@ export function EstimateResultSection({
             </div>
             <p className="mt-5 flex items-center gap-1.5 text-[10px] font-medium text-[#9a95a0]">
               <Icon name="clock" className="h-3.5 w-3.5" />
-              Pricing data updated September 2026
+              Pricing data updated {PRICING_UPDATED}
             </p>
           </div>
         </div>
@@ -269,6 +270,11 @@ export function EstimateResultSection({
             </div>
           </div>
 
+          <AiEstimateDetail
+            estimate={estimate}
+            currency={estimate.location.currency}
+          />
+
           <div className="rounded-[24px] border border-[#e7e4eb] bg-white p-5 shadow-[0_8px_30px_rgba(34,29,49,0.04)] sm:p-7">
             <div className="flex items-center justify-between">
               <div>
@@ -284,7 +290,7 @@ export function EstimateResultSection({
               </span>
             </div>
             <div className="mt-6 space-y-3">
-              {scopeByCategory[estimate.category.id].map((item, index) => (
+              {(scopeByCategory[estimate.category.id] ?? []).map((item, index) => (
                 <div
                   key={item}
                   className="flex items-start gap-3 rounded-2xl bg-[#faf9fb] p-3.5"

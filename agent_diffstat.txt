@@ -1,0 +1,16 @@
+ .gitignore                                |   3 +
+ app/api/estimates/route.ts                | 159 ------------------------------
+ app/layout.tsx                            |   4 +-
+ app/page.tsx                              | 141 +++++++++++++-------------
+ components/home/EstimateResult.tsx        |  12 ++-
+ components/home/Estimator.tsx             | 101 +++++++------------
+ components/quotation/QuoteModal.tsx       |   9 +-
+ constants/index.ts                        |   2 +
+ cost-calc                                 |   1 -
+ lib/index.ts                              |  74 +++++++++++---
+ next.config.mjs                           |   7 --
+ package-lock.json                         |  72 ++++++++++++++
+ package.json                              |   4 +-
+ types/index.ts                            |  28 +++++-
+ woocommerce-country-currency-switcher.php | 111 ---------------------
+ 15 files changed, 291 insertions(+), 437 deletions(-)

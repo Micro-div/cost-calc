@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { GeneratingOverlay } from "@/components/common/GeneratingOverlay";
 import { Toast } from "@/components/common/Toast";
 import { CtaSection } from "@/components/home/CtaSection";
@@ -22,8 +22,11 @@ import {
   calculateEstimate,
   detectCategory,
   detectLocation,
+  formatCurrency,
   scrollToSection,
 } from "@/lib";
+import ChatBot from "@/components/chatbot/ChatBot";
+import type { CustomLocation, CustomCategory } from "@/lib/chatbot/types";
 import type {
   CategoryId,
   CurrencyCode,
@@ -69,10 +72,10 @@ export default function Home() {
   );
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loadedDraftId, setLoadedDraftId] = useState<string | null>(null);
-  const [customDescription, setCustomDescription] = useState("");
-  const [analyzing, setAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [customSummary, setCustomSummary] = useState("");
+  const [customLocation, setCustomLocation] = useState<CustomLocation | null>(null);
+  const [customCategory, setCustomCategory] = useState<CustomCategory | null>(null);
+  const [pendingRun, setPendingRun] = useState(false);
   const [customProjectTypes, setCustomProjectTypes] = useState<CustomProjectType[]>(
     [],
   );
@@ -223,65 +226,6 @@ export default function Home() {
     }
   };
 
-  const analyzeCustomProject = async () => {
-    const text = customDescription.trim();
-    if (!text || analyzing) return;
-
-    setAnalyzing(true);
-    setCustomSummary("");
-    try {
-      const res = await fetch("/api/estimates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: text }),
-      });
-
-      const contentType = res.headers.get("content-type") ?? "";
-      if (!res.ok || !contentType.includes("application/json")) {
-        let message = "Could not analyze your project. Please try again.";
-        try {
-          const data: unknown = await res.json();
-          if (
-            typeof data === "object" &&
-            data !== null &&
-            typeof (data as { error?: unknown }).error === "string"
-          ) {
-            message = (data as { error: string }).error;
-          }
-        } catch {
-          // keep the default message
-        }
-        notifyError(message);
-        return;
-      }
-
-      const data = (await res.json()) as CustomProjectType & {
-        complexity: ProjectSizeId;
-        summary: string;
-      };
-      const customType: CustomProjectType = {
-        name: data.name,
-        type: data.type,
-        features: data.features,
-      };
-      saveCustomProjectType(customType);
-      setSelectedCustom(customType);
-      setCategoryId(data.type);
-      setSizeId(data.complexity);
-      setTitleOverride(data.name);
-      setCustomSummary(data.summary);
-      if (!description.trim()) {
-        setDescription(`${data.name}: ${data.features.join(", ")}`);
-      }
-      setCustomDescription("");
-      notify(`Analyzed: ${data.name}`);
-    } catch {
-      notifyError("Could not analyze your project. Please try again.");
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
   const beginEstimate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (description.trim().length < 12) return;
@@ -300,7 +244,10 @@ export default function Home() {
     window.setTimeout(() => scrollToSection("estimator"), 30);
   };
 
-  const continueQuestions = () => {
+  // Wrapped in useCallback so the pendingRun effect below has stable deps
+  // (react-hooks/exhaustive-deps) and the chatbot can trigger a run with the
+  // already-updated description/category/country/size on the next render.
+  const continueQuestions = useCallback(() => {
     if (questionStep === 0) {
       setQuestionStep(1);
       return;
@@ -316,6 +263,10 @@ export default function Home() {
         sizeId,
         qualityId,
         currencyOverride,
+        {
+          location: customLocation ?? undefined,
+          category: customCategory ?? undefined,
+        },
       );
       if (titleOverride) {
         result.projectTitle = titleOverride;
@@ -340,13 +291,21 @@ export default function Home() {
 
       window.setTimeout(() => scrollToSection("estimate-result"), 80);
     }, 2000);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionStep, description, categoryId, locationId, sizeId, qualityId, currencyOverride, customLocation, customCategory, titleOverride, history]);
+
+  // Chatbot "Yes, estimate it" → run on the NEXT render so the state set by
+  // onApplyProject/onApplyCountry (description, category, country, size) is
+  // already committed and continueQuestions reads the fresh values.
+  useEffect(() => {
+    if (!pendingRun) return;
+    setPendingRun(false);
+    continueQuestions();
+  }, [pendingRun, continueQuestions]);
 
   const resetEstimate = () => {
     window.history.replaceState(null, "", window.location.pathname);
     setDescription("");
-    setCustomDescription("");
-    setCustomSummary("");
     setSelectedCustom(null);
     setTitleOverride(null);
     setCategoryId("web");
@@ -549,22 +508,14 @@ export default function Home() {
         selectedCategory={selectedCategory}
         selectedLocation={selectedLocation}
         onDescriptionChange={setDescription}
-        customDescription={customDescription}
         onCategoryChange={(id) => {
           setCategoryId(id);
           setSelectedCustom(null);
         }}
-        onCustomDescriptionChange={(value) => {
-          setCustomDescription(value);
-          setCustomSummary("");
-        }}
-        onAnalyzeCustom={analyzeCustomProject}
-        analyzing={analyzing}
         customProjectTypes={customProjectTypes}
         selectedCustom={selectedCustom}
         onSelectCustomType={selectCustomType}
         onRemoveCustomType={removeCustomProjectType}
-        customSummary={customSummary}
         onLocationChange={(id) => {
           setLocationId(id);
           setLocationSelectedManually(true);
@@ -582,6 +533,10 @@ export default function Home() {
         }}
         onContinueQuestions={continueQuestions}
         isGenerating={isGenerating}
+        customLocation={customLocation}
+        customCategory={customCategory}
+        onCategoryChangeCustom={() => setCustomCategory(null)}
+        onLocationChangeCustom={() => setCustomLocation(null)}
         onViewEstimate={() => scrollToSection("estimate-result")}
         onNewEstimate={resetEstimate}
       />
@@ -625,6 +580,42 @@ export default function Home() {
       <Toast message={errorToast} error />
 
       <GeneratingOverlay showing={isGenerating} />
+
+      <ChatBot
+        supportedCountries={locations.map((l) => ({ id: l.id, country: l.country }))}
+        onApplyProject={(p) => {
+          setDescription(p.description.slice(0, 500));
+          setSizeId(p.complexity);
+          if (p.customCategory) {
+            setCustomCategory(p.customCategory);
+            if (p.categoryId !== "auto") {
+              setCategoryId(p.categoryId as CategoryId);
+            }
+          } else {
+            setCustomCategory(null);
+            if (p.categoryId !== "auto") {
+              setCategoryId(p.categoryId as CategoryId);
+            }
+          }
+        }}
+        onApplyCountry={(c) => {
+          if (c.locationId) {
+            setLocationId(c.locationId as LocationId);
+            setCustomLocation(null);
+            setLocationSelectedManually(true);
+            setCurrencyOverride(null);
+          } else if (c.custom) {
+            setCustomLocation(c.custom);
+            setLocationSelectedManually(true);
+          }
+        }}
+        onRunEstimate={() => setPendingRun(true)}
+        estimateSummary={
+          estimate
+            ? `${estimate.projectTitle}, ${estimate.location.country}, total ${formatCurrency(estimate.total, estimate.location)}, range ${formatCurrency(estimate.low, estimate.location)} to ${formatCurrency(estimate.high, estimate.location)}, ${estimate.durationMin}-${estimate.durationMax} weeks`
+            : undefined
+        }
+      />
     </main>
   );
 }

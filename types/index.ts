@@ -10,8 +10,32 @@ export type CategoryId = (typeof categories)[number]["id"];
 export type LocationId = (typeof locations)[number]["id"];
 export type ProjectSizeId = (typeof projectSizes)[number]["id"];
 export type QualityId = (typeof qualityOptions)[number]["id"];
-export type Category = (typeof categories)[number];
-export type Location = (typeof locations)[number];
+// Widened structural shapes: a built-in category/location satisfies them as-is;
+// an AI-provided custom category/location can too (same field names).
+export type Category =
+  | (typeof categories)[number]
+  | {
+      id: CategoryId;
+      name: string;
+      shortName: string;
+      description: string;
+      icon: string;
+      base: number;
+      hours: number;
+      weeks: number;
+      example: string;
+      range: string;
+    };
+export type Location =
+  | (typeof locations)[number]
+  | {
+      id: LocationId;
+      country: string;
+      city: string;
+      currency: (typeof allCurrencies)[number];
+      multiplier: number;
+      taxRate: number;
+    };
 export type ProjectSize = (typeof projectSizes)[number];
 export type QualityOption = (typeof qualityOptions)[number];
 export type CurrencyCode = (typeof allCurrencies)[number];

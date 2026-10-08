@@ -16,7 +16,9 @@ import type {
   ProjectSizeId,
   QualityId,
 } from "@/types";
+import type { CustomCategory, CustomLocation } from "@/lib/chatbot/types";
 
+export type { CustomCategory, CustomLocation };
 export function roundMoney(value: number) {
   return Math.round(value);
 }
@@ -105,10 +107,26 @@ export function detectCategory(description: string): CategoryId {
     },
   ];
 
-  return (
-    matches.find(({ words }) => words.some((word) => value.includes(word)))
-      ?.id ?? "web"
+  // Count keyword matches for EVERY category, pick the one with the most
+  // matches. Tie (or no match at all) prefers "web" — the previous behavior
+  // stopped at the first matching category in array order, which misfired on
+  // texts like "website ... basic SEO" (matched seo first).
+  const best = matches.reduce<{ id: CategoryId; count: number } | null>(
+    (acc, entry) => {
+      const count = entry.words.filter((word) => value.includes(word)).length;
+      if (count === 0) return acc;
+      if (
+        !acc ||
+        count > acc.count ||
+        (count === acc.count && entry.id === "web")
+      ) {
+        return { id: entry.id, count };
+      }
+      return acc;
+    },
+    null,
   );
+  return best?.id ?? "web";
 }
 
 export function detectLocation(description: string): LocationId {
@@ -147,19 +165,53 @@ export function getProjectTitle(description: string, category: Category) {
 
 export function calculateEstimate(
   description: string,
-  categoryId: CategoryId,
-  locationId: LocationId,
+  categoryId: CategoryId | "custom",
+  locationId: LocationId | "custom",
   sizeId: ProjectSizeId,
   qualityId: QualityId,
   currencyOverride?: CurrencyCode | null,
+  custom?: {
+    category?: CustomCategory;
+    location?: CustomLocation;
+  },
 ): EstimateResult {
-  const category =
-    categories.find((item) => item.id === categoryId) ?? categories[0];
-  const rawLocation =
-    locations.find((item) => item.id === locationId) ?? locations[0];
-  const currency: CurrencyCode = currencyOverride ?? rawLocation.currency;
+  // Custom category: use AI-provided base/hours/weeks instead of the lookup.
+  const category: Category = custom?.category
+    ? {
+        id: categoryId as CategoryId,
+        name: custom.category.name,
+        shortName: custom.category.name,
+        description: custom.category.summary ?? "",
+        icon: categories[0].icon,
+        base: custom.category.baseUsd,
+        hours: custom.category.hours,
+        weeks: custom.category.weeks,
+        example: "",
+        range: `$${Math.round(custom.category.baseUsd * 0.6)} - $${Math.round(custom.category.baseUsd * 2.4)}`,
+      }
+    : categories.find((item) => item.id === categoryId) ?? categories[0];
+  // Custom location: use AI-fetched country data instead of the lookup.
+  const rawLocation: Location = custom?.location
+    ? {
+        id: locationId as LocationId,
+        country: custom.location.country,
+        city: custom.location.city,
+        currency: custom.location.currency as CurrencyCode,
+        multiplier: custom.location.multiplier,
+        taxRate: custom.location.taxRate,
+      }
+    : locations.find((item) => item.id === locationId) ?? locations[0];
+  // Currency: the location's own currency unless an override was passed.
+  // For a custom location its own ISO code is cast in — Intl.NumberFormat
+  // accepts any valid ISO 4217 code, no fixed lookup table involved.
+  const currency = (
+    currencyOverride ?? rawLocation.currency
+  ) as CurrencyCode;
+  const fx =
+    custom?.location && currency === (custom.location.currency as CurrencyCode)
+      ? custom.location.unitsPerUsd
+      : USD_RATES[currency] ?? 1;
   const location = { ...rawLocation, currency } as Location;
-  const fx = USD_RATES[currency] ?? 1;
   const size =
     projectSizes.find((item) => item.id === sizeId) ?? projectSizes[1];
   const quality =

@@ -298,6 +298,8 @@ export const scopeByCategory: Record<CategoryId, string[]> = {
   ],
 };
 
+export const PRICING_UPDATED = "September 2026";
+
 export const assumptions = [
   "One approved round of revisions is included per deliverable",
   "You will provide copy, brand assets and feedback on schedule",
