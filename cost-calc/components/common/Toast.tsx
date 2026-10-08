@@ -11,7 +11,7 @@ export function Toast({
 
   return (
     <div
-      className={`fixed bottom-5 left-1/2 z-[120] flex -translate-x-1/2 items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-2xl ${
+      className={`fixed bottom-5 left-1/2 z-[120] flex w-auto max-w-[calc(100vw-2.5rem)] -translate-x-1/2 items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-2xl ${
         error ? "bg-[#8a2432]" : "bg-[#211e29]"
       }`}
       role="status"

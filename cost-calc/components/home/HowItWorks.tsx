@@ -24,16 +24,22 @@ export function HowItWorks() {
 
       <div className="mx-auto max-w-[1200px] px-5 pt-20 sm:px-7 sm:pt-28">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6b56d8]">
-            How it works
-          </p>
-          <h2 className="mt-3 text-3xl font-bold tracking-[-0.045em] text-[#201d27] sm:text-4xl">
-            From an idea to a clear estimate in three steps.
-          </h2>
-          <p className="mt-4 text-sm leading-6 text-[#77727e] sm:text-base">
-            No spreadsheets, phone calls or confusing price lists. Just a more
-            informed way to plan.
-          </p>
+          <Reveal>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6b56d8]">
+              How it works
+            </p>
+          </Reveal>
+          <Reveal delay={120} className="mt-3">
+            <h2 className="text-3xl font-bold tracking-[-0.045em] text-[#201d27] sm:text-4xl">
+              From an idea to a clear estimate in three steps.
+            </h2>
+          </Reveal>
+          <Reveal delay={240} className="mt-4">
+            <p className="text-sm leading-6 text-[#77727e] sm:text-base">
+              No spreadsheets, phone calls or confusing price lists. Just a more
+              informed way to plan.
+            </p>
+          </Reveal>
         </div>
         <div className="relative mt-14 grid gap-5 md:grid-cols-3">
           <div className="process-line absolute left-[16%] right-[16%] top-7 hidden border-t border-dashed border-[#d9d3ee] md:block" />

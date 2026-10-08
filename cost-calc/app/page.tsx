@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { CurrencySettingsModal } from "@/components/common/CurrencySettingsModal";
+import { GeneratingOverlay } from "@/components/common/GeneratingOverlay";
 import { Toast } from "@/components/common/Toast";
 import { CtaSection } from "@/components/home/CtaSection";
 import { EstimateResultSection } from "@/components/home/EstimateResult";
@@ -21,7 +21,6 @@ import {
 import {
   calculateEstimate,
   detectCategory,
-  detectCurrencyFromLocale,
   detectLocation,
   scrollToSection,
 } from "@/lib";
@@ -31,7 +30,6 @@ import type {
   CustomProjectType,
   EstimateItem,
   EstimateResult,
-  Location,
   LocationId,
   ProjectSizeId,
   QualityId,
@@ -66,9 +64,6 @@ export default function Home() {
   const [quoteItems, setQuoteItems] = useState<EstimateItem[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [autoCurrency, setAutoCurrency] = useState(true);
-  const [manualCurrency, setManualCurrency] = useState<CurrencyCode>("USD");
   const [currencyOverride, setCurrencyOverride] = useState<CurrencyCode | null>(
     null,
   );
@@ -182,7 +177,7 @@ export default function Home() {
           shared.locationId,
           shared.sizeId,
           shared.qualityId,
-          autoCurrency ? currencyOverride : manualCurrency,
+          currencyOverride,
         ),
       );
       setStage("complete");
@@ -190,6 +185,7 @@ export default function Home() {
     } catch {
       window.history.replaceState(null, "", window.location.pathname);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currencyOverride]);
 
   const persistCustomProjectTypes = (next: CustomProjectType[]) => {
@@ -319,7 +315,7 @@ export default function Home() {
         locationId,
         sizeId,
         qualityId,
-        autoCurrency ? currencyOverride : manualCurrency,
+        currencyOverride,
       );
       if (titleOverride) {
         result.projectTitle = titleOverride;
@@ -523,16 +519,6 @@ export default function Home() {
   const activeStep = stage === "describe" ? 0 : stage === "questions" ? 1 : 2;
   const descriptionReady = description.trim().length >= 12;
 
-  const effectiveCurrency: CurrencyCode = autoCurrency
-    ? (currencyOverride ?? detectCurrencyFromLocale())
-    : manualCurrency;
-
-  const getLocationWithCurrency = (loc: Location): Location =>
-    ({
-      ...loc,
-      currency: effectiveCurrency,
-    }) as Location;
-
   return (
     <main
       id="top"
@@ -542,7 +528,6 @@ export default function Home() {
         mobileMenuOpen={mobileMenuOpen}
         onToggleMobileMenu={() => setMobileMenuOpen((open) => !open)}
         onCloseMobileMenu={() => setMobileMenuOpen(false)}
-        onOpenSettings={() => setSettingsOpen(true)}
         onEstimateClick={resetEstimate}
         history={history}
         onLoadHistory={loadHistoryEntry}
@@ -636,25 +621,10 @@ export default function Home() {
         />
       )}
 
-      {settingsOpen && (
-        <CurrencySettingsModal
-          autoCurrency={autoCurrency}
-          manualCurrency={manualCurrency}
-          currencyOverride={currencyOverride}
-          effectiveCurrency={effectiveCurrency}
-          onAutoCurrencyChange={setAutoCurrency}
-          onManualCurrencyChange={setManualCurrency}
-          onCurrencyOverrideChange={setCurrencyOverride}
-          onClose={() => setSettingsOpen(false)}
-          onReset={() => {
-            setAutoCurrency(true);
-            setCurrencyOverride(null);
-          }}
-        />
-      )}
-
       <Toast message={toast} />
       <Toast message={errorToast} error />
+
+      <GeneratingOverlay showing={isGenerating} />
     </main>
   );
 }

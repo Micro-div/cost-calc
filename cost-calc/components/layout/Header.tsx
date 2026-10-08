@@ -19,7 +19,6 @@ interface HeaderProps {
   mobileMenuOpen: boolean;
   onToggleMobileMenu: () => void;
   onCloseMobileMenu: () => void;
-  onOpenSettings: () => void;
   onEstimateClick: () => void;
   history: HistoryEntry[];
   onLoadHistory: (entry: HistoryEntry) => void;
@@ -43,7 +42,6 @@ export function Header({
   mobileMenuOpen,
   onToggleMobileMenu,
   onCloseMobileMenu,
-  onOpenSettings,
   onEstimateClick,
   history,
   onLoadHistory,
@@ -101,19 +99,19 @@ export function Header({
         <div className="hidden items-center gap-8 md:flex">
           <a
             href="#services"
-            className="text-sm font-medium text-[#65616d] transition hover:text-[#d67d07]"
+            className="inline-flex min-h-[44px] items-center whitespace-nowrap text-sm font-medium text-[#65616d] transition hover:text-[#d67d07]"
           >
             Services
           </a>
           <a
             href="#how-it-works"
-            className="text-sm font-medium text-[#65616d] transition hover:text-[#d67d07]"
+            className="inline-flex min-h-[44px] items-center whitespace-nowrap text-sm font-medium text-[#65616d] transition hover:text-[#d67d07]"
           >
             How it works
           </a>
           <a
             href="#why-costcalc"
-            className="text-sm font-medium text-[#65616d] transition hover:text-[#d67d07]"
+            className="inline-flex min-h-[44px] items-center whitespace-nowrap text-sm font-medium text-[#65616d] transition hover:text-[#d67d07]"
           >
             Why CostCalc
           </a>
@@ -121,7 +119,7 @@ export function Header({
             <button
               type="button"
               onClick={() => setHistoryOpen((o) => !o)}
-              className="flex items-center gap-1.5 text-sm font-medium text-[#65616d] transition hover:text-[#d67d07]"
+              className="flex min-h-[44px] items-center gap-1.5 whitespace-nowrap text-sm font-medium text-[#65616d] transition hover:text-[#d67d07]"
               aria-expanded={historyOpen}
               aria-label="Saved estimates and drafts"
             >
@@ -225,25 +223,15 @@ export function Header({
             type="button"
             onClick={onEstimateClick}
             aria-label="New estimate"
-            className="group flex items-center gap-2 rounded-full bg-[#EEEDF3] px-4 py-2 text-sm font-semibold text-[#2b2732] transition hover:bg-[#e3e1ea]"
+            className="group flex min-h-[44px] items-center gap-2 rounded-full bg-[#EEEDF3] px-4 py-2 text-sm font-semibold text-[#2b2732] transition hover:bg-[#e3e1ea]"
           >
             <Icon name="plus" className="h-4 w-4" />
-            <span className="hidden md:inline">New estimate</span>
-          </button>
-        </div>
-        <div className="flex items-center gap-2 md:hidden">
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            className="grid h-10 w-10 place-items-center rounded-xl border border-[#e5e2e9] text-[#393541]"
-            aria-label="Currency settings"
-          >
-            <Icon name="globe" className="h-4 w-4" />
+            <span className="hidden whitespace-nowrap md:inline">New estimate</span>
           </button>
           <button
             type="button"
             onClick={onToggleMobileMenu}
-            className="grid h-10 w-10 place-items-center rounded-xl border border-[#e5e2e9] text-[#393541]"
+            className="grid h-11 w-11 place-items-center rounded-xl border border-[#e5e2e9] text-[#393541] md:hidden"
             aria-expanded={mobileMenuOpen}
             aria-label="Toggle navigation"
           >

@@ -21,9 +21,9 @@ const columns = [
   {
     title: "Support",
     links: [
-      { label: "Help", href: "#" },
-      { label: "Privacy", href: "#" },
-      { label: "Terms", href: "#" },
+      { label: "Help", href: "#" },{ label: "Privacy", href: "#" },  { label: "Terms", href: "#" },
+      
+    
     ],
   },
 ];
@@ -85,12 +85,12 @@ export function Footer() {
                 Get a clearer idea of what your project might cost.
               </p>
               <div className="mt-3 flex items-center gap-4">
-                <a href="mailto:hello@costcalc.com" className={`text-sm ${linkClass}`}>
+                <a href="mailto:hello@costcalc.com" className={`inline-flex min-h-[44px] items-center text-sm ${linkClass}`}>
                   hello@costcalc.com
                 </a>
                 <span className="flex items-center gap-3">
                   {socials.map((item) => (
-                    <a key={item.label} href={item.href} aria-label={item.label} className={linkClass}>
+                    <a key={item.label} href={item.href} aria-label={item.label} className={`inline-flex min-h-[44px] items-center ${linkClass}`}>
                       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                         <path d={item.path} />
                       </svg>
@@ -106,7 +106,7 @@ export function Footer() {
                 <ul className="mt-3 space-y-2 text-sm">
                   {column.links.map((link) => (
                     <li key={link.label}>
-                      <a href={link.href} className={linkClass}>
+                      <a href={link.href} className={`inline-flex min-h-[44px] items-center ${linkClass}`}>
                         {link.label}
                       </a>
                     </li>

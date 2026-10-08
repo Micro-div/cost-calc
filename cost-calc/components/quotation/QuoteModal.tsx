@@ -236,14 +236,14 @@ export function QuoteModal({
                 onSaveDraft(businessName, customerName);
                 onClose();
               }}
-              className="flex-1 rounded-xl border border-[#dcd8e2] bg-white px-4 py-3 text-sm font-semibold text-[#3e3a46] transition hover:bg-[#f6f5f7] sm:flex-none"
+              className="flex-1 rounded-xl border border-[#dcd8e2] bg-white px-4 py-3 text-sm font-semibold text-[#3e3a46] transition hover:bg-[#f6f5f7] sm:flex-none sm:min-h-[44px]"
             >
               {isEditingDraft ? "Save estimate" : "Save draft"}
             </button>
             <button
               type="button"
               onClick={printQuote}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#6754e7] px-5 py-3 text-sm font-bold text-white shadow-[0_8px_22px_rgba(103,84,231,0.22)] transition hover:bg-[#5946d3] sm:flex-none"
+              className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#6754e7] px-5 py-3 text-sm font-bold text-white shadow-[0_8px_22px_rgba(103,84,231,0.22)] transition hover:bg-[#5946d3] sm:flex-none"
             >
               <Icon name="download" className="h-4 w-4" />
               Download PDF

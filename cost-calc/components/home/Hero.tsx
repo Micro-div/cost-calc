@@ -16,7 +16,7 @@ const heroCss = `
 @keyframes heroLetterIn {
   from { opacity: 0; transform: translateX(-10px); }
 }
-.hero-word { display: inline-block; white-space: nowrap; margin-right: 0.22em; }
+.hero-word { display: inline-block; white-space: nowrap; }
 .hero-letter {
   display: inline-block;
   animation: heroLetterIn 0.25s ease-out both;
@@ -32,7 +32,7 @@ export function Hero(props: EstimatorProps) {
       <style>{heroCss}</style>
       <div className="hero-orb hero-orb-one" />
       <div className="hero-orb hero-orb-two" />
-      <div className="relative mx-auto grid min-w-0 max-w-[1200px] grid-cols-[minmax(0,1fr)] gap-12 px-5 pb-20 pt-14 sm:px-7 sm:pt-20 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:items-center lg:gap-16 lg:pb-28 lg:pt-24">
+      <div className="relative mx-auto grid min-w-0 max-w-[1200px] grid-cols-[minmax(0,1fr)] gap-12 px-5 pb-12 pt-14 sm:px-7 sm:pb-20 sm:pt-20 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:items-center lg:gap-16 lg:pb-28 lg:pt-24">
         <div className="min-w-0 max-w-xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#ded9f4] bg-white/80 px-3 py-1.5 text-xs font-bold text-[#5d50a3] shadow-sm backdrop-blur">
             <span className="grid h-5 w-5 place-items-center rounded-full bg-[#ece8ff]">
@@ -46,21 +46,23 @@ export function Hero(props: EstimatorProps) {
             className="mt-6 text-[2.75rem] font-bold leading-[1.04] tracking-[-0.055em] text-[#19171f] sm:text-[3.6rem] lg:text-[4.15rem]"
           >
             {words.map((word, w) => (
-              <span
-                key={w}
-                aria-hidden="true"
-                className="hero-word"
-                style={{ color: wordColor(w) }}
-              >
-                {word.split("").map((char, c) => (
-                  <span
-                    key={c}
-                    className="hero-letter"
-                    style={{ animationDelay: `${(offsets[w] + c) * 90}ms` }}
-                  >
-                    {char}
-                  </span>
-                ))}
+              <span key={w} className="inline">
+                <span
+                  aria-hidden="true"
+                  className="hero-word"
+                  style={{ color: wordColor(w) }}
+                >
+                  {word.split("").map((char, c) => (
+                    <span
+                      key={c}
+                      className="hero-letter"
+                      style={{ animationDelay: `${(offsets[w] + c) * 90}ms` }}
+                    >
+                      {char}
+                    </span>
+                  ))}
+                </span>
+                {w < words.length - 1 ? " " : ""}
               </span>
             ))}
           </h1>
