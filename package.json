@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "costcalc",
   "version": "0.1.0",
   "private": true,
@@ -9,6 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
+=======
+>>>>>>> origin/main
   "dependencies": {
 
     "next": "15.3.8",
