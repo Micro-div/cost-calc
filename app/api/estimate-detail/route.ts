@@ -1,16 +1,4 @@
-import { RESEARCH_MODEL, block, clean, failure, getClient, limited, list, num, reply, toolInput } from "../_lib/ai";
-
-// NOTE: groq-sdk may not export ChatCompletionMessageParam in every published
-// version. Declare a local, structurally compatible type here so the chat
-// completions call stays typed while avoiding a per-version import error.
-type ChatCompletionMessageParam = {
-  role?: "user" | "assistant" | "system" | "function" | "tool";
-  content?: string | null;
-  tool_calls?: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }> | null;
-  name?: string | null;
-  tool_call_id?: string | null;
-  function_call?: { name: string; arguments: string } | null;
-};
+import { RESEARCH_MODEL, block, clean, failure, getClient, limited, list, num, reply, toolInput, type ChatMessage } from "../_lib/ai";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -93,7 +81,7 @@ export async function POST(req: Request) {
         {
           role: "user",
           content: `Language: ${clean(body.language, 30, "English")}\nProject description: ${block(body.description, 500)}\n\nENGINE RESULT (read-only):\n${facts}`,
-        } as ChatCompletionMessageParam,
+        } as ChatMessage,
       ],
       tools: [TOOL],
       tool_choice: "auto",

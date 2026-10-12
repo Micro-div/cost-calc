@@ -1,3 +1,5 @@
+import type { LineItemSpec } from "@/types";
+
 export type Complexity = "small" | "medium" | "large";
 
 export type ProjectDraft = {
@@ -7,6 +9,7 @@ export type ProjectDraft = {
   category: string; // one of 8 ids | "custom" | "auto"
   customCategoryName?: string;
   complexity: Complexity;
+  quality?: "essential" | "standard" | "premium"; // optional, chat can preselect
   country?: string; // English country name if the user said one
 };
 
@@ -25,12 +28,14 @@ export type CustomLocation = {
   origin: "web" | "cache" | "offline";
 };
 
-// Project type that does not fit the 8 categories.
+// Project type that does not fit the 8 categories (e.g. a tyre shop, a mart,
+// a restaurant). The estimate uses its own researched breakdown items.
 export type CustomCategory = {
   name: string;
   baseUsd: number;
   hours: number;
   weeks: number;
   summary?: string;
+  items?: LineItemSpec[];
   origin: "web" | "cache" | "offline";
 };

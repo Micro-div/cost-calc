@@ -10,6 +10,17 @@ export type CategoryId = (typeof categories)[number]["id"];
 export type LocationId = (typeof locations)[number]["id"];
 export type ProjectSizeId = (typeof projectSizes)[number]["id"];
 export type QualityId = (typeof qualityOptions)[number]["id"];
+// One cost line of an estimate. share = fraction of the project total
+// (shares are normalized to 1 before pricing). quantity defaults to 1.
+export type LineItemSpec = {
+  name: string;
+  detail: string;
+  share: number;
+  quantity?: number;
+};
+
+export type CitySpec = { name: string; factor: number };
+
 // Widened structural shapes: a built-in category/location satisfies them as-is;
 // an AI-provided custom category/location can too (same field names).
 export type Category =
@@ -25,6 +36,7 @@ export type Category =
       weeks: number;
       example: string;
       range: string;
+      lineItems?: ReadonlyArray<LineItemSpec>;
     };
 export type Location =
   | (typeof locations)[number]
@@ -35,6 +47,7 @@ export type Location =
       currency: (typeof allCurrencies)[number];
       multiplier: number;
       taxRate: number;
+      cities?: ReadonlyArray<CitySpec>;
     };
 export type ProjectSize = (typeof projectSizes)[number];
 export type QualityOption = (typeof qualityOptions)[number];

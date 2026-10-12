@@ -19,6 +19,13 @@ export const categories = [
     range: "$3k – $12k",
     example:
       "I need a responsive business website with a modern design, contact form and basic SEO.",
+    lineItems: [
+      { name: "Discovery & content plan", detail: "Requirements, sitemap and content structure", share: 0.12, quantity: 1 },
+      { name: "UX & UI design", detail: "Page layouts, wireframes and visual design", share: 0.18, quantity: 1 },
+      { name: "Front-end development", detail: "Responsive build, forms and CMS integration", share: 0.42, quantity: 80 },
+      { name: "Testing & launch", detail: "Browser checks, fixes and go-live", share: 0.14, quantity: 1 },
+      { name: "Project management & handover", detail: "Coordination, review rounds and handover", share: 0.14, quantity: 1 },
+    ],
   },
   {
     id: "mobile",
@@ -32,6 +39,13 @@ export const categories = [
     range: "$7k – $28k",
     example:
       "I need a cross-platform fitness app with user profiles, subscriptions and progress tracking.",
+    lineItems: [
+      { name: "Product discovery & architecture", detail: "Flows, screens plan and technical setup", share: 0.1, quantity: 1 },
+      { name: "UX & UI design", detail: "Mobile wireframes, screens and design system", share: 0.16, quantity: 1 },
+      { name: "App development (iOS + Android)", detail: "Cross-platform build and backend integration", share: 0.42, quantity: 143 },
+      { name: "Testing & store submission", detail: "Device testing, fixes and app store release", share: 0.2, quantity: 1 },
+      { name: "Project management", detail: "Coordination, review rounds and handover", share: 0.12, quantity: 1 },
+    ],
   },
   {
     id: "ecommerce",
@@ -45,6 +59,13 @@ export const categories = [
     range: "$5k – $17k",
     example:
       "I need an ecommerce website for a clothing brand with online payments, customer accounts and about 500 products.",
+    lineItems: [
+      { name: "Storefront & product page design", detail: "Shop design, product cards and checkout UX", share: 0.15, quantity: 1 },
+      { name: "Store development", detail: "Catalog, cart, customer accounts and admin", share: 0.42, quantity: 103 },
+      { name: "Payments, tax & shipping setup", detail: "Gateways, tax rules and delivery options", share: 0.16, quantity: 1 },
+      { name: "QA, launch & analytics", detail: "Order testing, tracking setup and go-live", share: 0.17, quantity: 1 },
+      { name: "Project management & training", detail: "Coordination and staff training", share: 0.1, quantity: 1 },
+    ],
   },
   {
     id: "design",
@@ -58,6 +79,12 @@ export const categories = [
     range: "$2k – $8k",
     example:
       "I need a complete UI and UX design for a budgeting mobile app, including research and a clickable prototype.",
+    lineItems: [
+      { name: "Research & wireframes", detail: "User research, flows and low-fi screens", share: 0.22, quantity: 1 },
+      { name: "UI design (key screens)", detail: "High-fidelity screens and visual style", share: 0.4, quantity: 1 },
+      { name: "Interactive prototype", detail: "Clickable prototype for testing", share: 0.23, quantity: 1 },
+      { name: "Design system & handover", detail: "Components, tokens and developer handover", share: 0.15, quantity: 1 },
+    ],
   },
   {
     id: "seo",
@@ -71,6 +98,12 @@ export const categories = [
     range: "$1.2k – $5k",
     example:
       "I need technical SEO and a three-month content plan to improve organic traffic for my SaaS website.",
+    lineItems: [
+      { name: "Technical audit & fixes", detail: "Site health, speed and crawl fixes", share: 0.25, quantity: 1 },
+      { name: "Keyword & content strategy", detail: "Keyword research and topic plan", share: 0.25, quantity: 1 },
+      { name: "On-page implementation", detail: "Meta, structure and internal linking", share: 0.3, quantity: 1 },
+      { name: "Tracking & reporting", detail: "Rank tracking and progress reports", share: 0.2, quantity: 1 },
+    ],
   },
   {
     id: "social",
@@ -84,6 +117,12 @@ export const categories = [
     range: "$1.5k – $6k",
     example:
       "I need social media management for a small fashion brand, with 12 posts per month and monthly reports.",
+    lineItems: [
+      { name: "Content plan & calendar", detail: "Audience research and monthly plan", share: 0.18, quantity: 1 },
+      { name: "Creative production", detail: "Posts, reels and campaign visuals", share: 0.38, quantity: 1 },
+      { name: "Publishing & community", detail: "Scheduling, replies and monitoring", share: 0.27, quantity: 1 },
+      { name: "Reporting & optimization", detail: "Monthly analytics and improvements", share: 0.17, quantity: 1 },
+    ],
   },
   {
     id: "branding",
@@ -97,6 +136,12 @@ export const categories = [
     range: "$1.8k – $8k",
     example:
       "I need a complete visual identity for a new coffee brand, including logo, color palette and brand guide.",
+    lineItems: [
+      { name: "Discovery & positioning", detail: "Brand workshop and direction", share: 0.18, quantity: 1 },
+      { name: "Logo design & iterations", detail: "Concepts, revisions and final files", share: 0.3, quantity: 1 },
+      { name: "Color, typography & assets", detail: "Palette, type system and supporting graphics", share: 0.32, quantity: 1 },
+      { name: "Brand guidelines & handover", detail: "Usage guide and file package", share: 0.2, quantity: 1 },
+    ],
   },
   {
     id: "ai",
@@ -110,6 +155,13 @@ export const categories = [
     range: "$8k – $32k",
     example:
       "I need an AI customer support assistant that connects to our knowledge base and Shopify store.",
+    lineItems: [
+      { name: "Use-case discovery & data prep", detail: "Requirements, data sources and success criteria", share: 0.14, quantity: 1 },
+      { name: "Model & integration architecture", detail: "LLM choice, pipeline and system design", share: 0.18, quantity: 1 },
+      { name: "Build, train & integrate", detail: "Workflow build, prompts and app integration", share: 0.4, quantity: 132 },
+      { name: "Evaluation, safety & tuning", detail: "Quality tests, guardrails and refinements", share: 0.18, quantity: 1 },
+      { name: "Monitoring & handover", detail: "Dashboards, docs and team training", share: 0.1, quantity: 1 },
+    ],
   },
 ] as const;
 
@@ -121,6 +173,13 @@ export const locations = [
     currency: "USD",
     multiplier: 1.2,
     taxRate: 0.08875,
+    cities: [
+      { name: "New York", factor: 1 },
+      { name: "San Francisco", factor: 1.1 },
+      { name: "Austin", factor: 0.87 },
+      { name: "Chicago", factor: 0.95 },
+      { name: "Seattle", factor: 1 },
+    ],
   },
   {
     id: "ca",
@@ -129,6 +188,13 @@ export const locations = [
     currency: "CAD",
     multiplier: 1,
     taxRate: 0.13,
+    cities: [
+      { name: "Toronto", factor: 1 },
+      { name: "Vancouver", factor: 1.05 },
+      { name: "Montreal", factor: 0.95 },
+      { name: "Calgary", factor: 0.97 },
+      { name: "Ottawa", factor: 0.95 },
+    ],
   },
   {
     id: "uk",
@@ -137,6 +203,13 @@ export const locations = [
     currency: "GBP",
     multiplier: 0.92,
     taxRate: 0.2,
+    cities: [
+      { name: "London", factor: 1 },
+      { name: "Manchester", factor: 0.9 },
+      { name: "Birmingham", factor: 0.88 },
+      { name: "Edinburgh", factor: 0.93 },
+      { name: "Leeds", factor: 0.87 },
+    ],
   },
   {
     id: "ae",
@@ -145,6 +218,13 @@ export const locations = [
     currency: "AED",
     multiplier: 1.02,
     taxRate: 0.05,
+    cities: [
+      { name: "Dubai", factor: 1 },
+      { name: "Abu Dhabi", factor: 0.97 },
+      { name: "Sharjah", factor: 0.9 },
+      { name: "Ajman", factor: 0.88 },
+      { name: "Ras Al Khaimah", factor: 0.9 },
+    ],
   },
   {
     id: "pk",
@@ -153,6 +233,13 @@ export const locations = [
     currency: "PKR",
     multiplier: 0.34,
     taxRate: 0.05,
+    cities: [
+      { name: "Karachi", factor: 1 },
+      { name: "Lahore", factor: 0.98 },
+      { name: "Islamabad", factor: 1.02 },
+      { name: "Rawalpindi", factor: 0.97 },
+      { name: "Faisalabad", factor: 0.92 },
+    ],
   },
   {
     id: "in",
@@ -161,6 +248,13 @@ export const locations = [
     currency: "INR",
     multiplier: 0.3,
     taxRate: 0.18,
+    cities: [
+      { name: "Mumbai", factor: 1 },
+      { name: "Delhi", factor: 0.98 },
+      { name: "Bengaluru", factor: 1.02 },
+      { name: "Hyderabad", factor: 0.95 },
+      { name: "Chennai", factor: 0.93 },
+    ],
   },
   {
     id: "au",
@@ -169,6 +263,13 @@ export const locations = [
     currency: "AUD",
     multiplier: 1.08,
     taxRate: 0.1,
+    cities: [
+      { name: "Sydney", factor: 1 },
+      { name: "Melbourne", factor: 0.98 },
+      { name: "Brisbane", factor: 0.93 },
+      { name: "Perth", factor: 0.95 },
+      { name: "Adelaide", factor: 0.9 },
+    ],
   },
   {
     id: "de",
@@ -177,6 +278,13 @@ export const locations = [
     currency: "EUR",
     multiplier: 0.98,
     taxRate: 0.19,
+    cities: [
+      { name: "Berlin", factor: 1 },
+      { name: "Munich", factor: 1.08 },
+      { name: "Hamburg", factor: 1 },
+      { name: "Frankfurt", factor: 1.06 },
+      { name: "Cologne", factor: 0.97 },
+    ],
   },
   {
     id: "sg",
@@ -185,6 +293,13 @@ export const locations = [
     currency: "SGD",
     multiplier: 1.04,
     taxRate: 0.09,
+    cities: [
+      { name: "Marina Bay", factor: 1 },
+      { name: "Jurong", factor: 0.94 },
+      { name: "Tampines", factor: 0.96 },
+      { name: "Woodlands", factor: 0.93 },
+      { name: "Changi", factor: 0.95 },
+    ],
   },
   {
     id: "ng",
@@ -193,6 +308,163 @@ export const locations = [
     currency: "NGN",
     multiplier: 0.28,
     taxRate: 0.075,
+    cities: [
+      { name: "Lagos", factor: 1 },
+      { name: "Abuja", factor: 0.98 },
+      { name: "Kano", factor: 0.9 },
+      { name: "Ibadan", factor: 0.88 },
+      { name: "Port Harcourt", factor: 0.92 },
+    ],
+  },
+  {
+    id: "sa",
+    country: "Saudi Arabia",
+    city: "Riyadh",
+    currency: "SAR",
+    multiplier: 0.95,
+    taxRate: 0.15,
+    cities: [
+      { name: "Riyadh", factor: 1 },
+      { name: "Jeddah", factor: 0.98 },
+      { name: "Dammam", factor: 0.95 },
+      { name: "Mecca", factor: 0.95 },
+      { name: "Medina", factor: 0.93 },
+    ],
+  },
+  {
+    id: "tr",
+    country: "Turkey",
+    city: "Istanbul",
+    currency: "TRY",
+    multiplier: 0.5,
+    taxRate: 0.2,
+    cities: [
+      { name: "Istanbul", factor: 1.08 },
+      { name: "Ankara", factor: 1 },
+      { name: "Izmir", factor: 0.97 },
+      { name: "Bursa", factor: 0.95 },
+      { name: "Antalya", factor: 0.95 },
+    ],
+  },
+  {
+    id: "ph",
+    country: "Philippines",
+    city: "Manila",
+    currency: "PHP",
+    multiplier: 0.35,
+    taxRate: 0.12,
+    cities: [
+      { name: "Manila", factor: 1.1 },
+      { name: "Quezon City", factor: 1.05 },
+      { name: "Cebu", factor: 0.95 },
+      { name: "Davao", factor: 0.9 },
+      { name: "Makati", factor: 1.12 },
+    ],
+  },
+  {
+    id: "ke",
+    country: "Kenya",
+    city: "Nairobi",
+    currency: "KES",
+    multiplier: 0.32,
+    taxRate: 0.16,
+    cities: [
+      { name: "Nairobi", factor: 1.1 },
+      { name: "Mombasa", factor: 1 },
+      { name: "Kisumu", factor: 0.92 },
+      { name: "Nakuru", factor: 0.9 },
+      { name: "Eldoret", factor: 0.9 },
+    ],
+  },
+  {
+    id: "my",
+    country: "Malaysia",
+    city: "Kuala Lumpur",
+    currency: "MYR",
+    multiplier: 0.55,
+    taxRate: 0.08,
+    cities: [
+      { name: "Kuala Lumpur", factor: 1.1 },
+      { name: "Johor Bahru", factor: 1 },
+      { name: "Penang", factor: 0.97 },
+      { name: "Ipoh", factor: 0.92 },
+      { name: "Malacca", factor: 0.92 },
+    ],
+  },
+  {
+    id: "bd",
+    country: "Bangladesh",
+    city: "Dhaka",
+    currency: "BDT",
+    multiplier: 0.3,
+    taxRate: 0.15,
+    cities: [
+      { name: "Dhaka", factor: 1.1 },
+      { name: "Chittagong", factor: 1 },
+      { name: "Khulna", factor: 0.92 },
+      { name: "Sylhet", factor: 0.95 },
+      { name: "Rajshahi", factor: 0.9 },
+    ],
+  },
+  {
+    id: "fr",
+    country: "France",
+    city: "Paris",
+    currency: "EUR",
+    multiplier: 0.97,
+    taxRate: 0.2,
+    cities: [
+      { name: "Paris", factor: 1.12 },
+      { name: "Lyon", factor: 1 },
+      { name: "Marseille", factor: 0.97 },
+      { name: "Toulouse", factor: 0.95 },
+      { name: "Nice", factor: 1 },
+    ],
+  },
+  {
+    id: "br",
+    country: "Brazil",
+    city: "São Paulo",
+    currency: "BRL",
+    multiplier: 0.5,
+    taxRate: 0.15,
+    cities: [
+      { name: "São Paulo", factor: 1.1 },
+      { name: "Rio de Janeiro", factor: 1.05 },
+      { name: "Brasília", factor: 1 },
+      { name: "Curitiba", factor: 0.95 },
+      { name: "Porto Alegre", factor: 0.95 },
+    ],
+  },
+  {
+    id: "eg",
+    country: "Egypt",
+    city: "Cairo",
+    currency: "EGP",
+    multiplier: 0.3,
+    taxRate: 0.14,
+    cities: [
+      { name: "Cairo", factor: 1.1 },
+      { name: "Giza", factor: 1.05 },
+      { name: "Alexandria", factor: 1 },
+      { name: "New Cairo", factor: 1.08 },
+      { name: "Luxor", factor: 0.9 },
+    ],
+  },
+  {
+    id: "id",
+    country: "Indonesia",
+    city: "Jakarta",
+    currency: "IDR",
+    multiplier: 0.38,
+    taxRate: 0.11,
+    cities: [
+      { name: "Jakarta", factor: 1.1 },
+      { name: "Surabaya", factor: 1 },
+      { name: "Bandung", factor: 0.95 },
+      { name: "Medan", factor: 0.95 },
+      { name: "Bali", factor: 1.02 },
+    ],
   },
 ] as const;
 
@@ -328,6 +600,13 @@ export const allCurrencies = [
   "CHF",
   "SEK",
   "NOK",
+  "TRY",
+  "EGP",
+  "MYR",
+  "BDT",
+  "KES",
+  "PHP",
+  "IDR",
 ] as const;
 
 export const USD_RATES: Record<CurrencyCode, number> = {
@@ -351,4 +630,11 @@ export const USD_RATES: Record<CurrencyCode, number> = {
   CHF: 0.8,
   SEK: 9.4,
   NOK: 10,
+  TRY: 42,
+  EGP: 48,
+  MYR: 4.4,
+  BDT: 122,
+  KES: 129,
+  PHP: 57,
+  IDR: 16500,
 };

@@ -26,6 +26,8 @@ import {
   scrollToSection,
 } from "@/lib";
 import ChatBot from "@/components/chatbot/ChatBot";
+import { researchCategory, researchLocation } from "@/lib/chatbot/research";
+import { matchSupportedCountry } from "@/lib/chatbot/fallback";
 import type { CustomLocation, CustomCategory } from "@/lib/chatbot/types";
 import type {
   CategoryId,
@@ -54,6 +56,7 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<CategoryId>("web");
   const [locationId, setLocationId] = useState<LocationId>("us");
+  const [cityName, setCityName] = useState("");
   const [locationSelectedManually, setLocationSelectedManually] =
     useState(false);
   const [sizeId, setSizeId] = useState<ProjectSizeId>("medium");
@@ -75,6 +78,8 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [customLocation, setCustomLocation] = useState<CustomLocation | null>(null);
   const [customCategory, setCustomCategory] = useState<CustomCategory | null>(null);
+  const [categorySelectedManually, setCategorySelectedManually] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pendingRun, setPendingRun] = useState(false);
   const [customProjectTypes, setCustomProjectTypes] = useState<CustomProjectType[]>(
     [],
@@ -88,10 +93,10 @@ export default function Home() {
     () => categories.find((item) => item.id === categoryId) ?? categories[0],
     [categoryId],
   );
-  const selectedLocation = useMemo(
-    () => locations.find((item) => item.id === locationId) ?? locations[0],
-    [locationId],
-  );
+  const selectedLocation = useMemo(() => {
+    const found = locations.find((item) => item.id === locationId) ?? locations[0];
+    return cityName ? { ...found, city: cityName } : found;
+  }, [locationId, cityName]);
 
   const notify = (message: string) => {
     setToast(message);
@@ -221,38 +226,174 @@ export default function Home() {
     if (!custom) return;
     setSelectedCustom(custom);
     setCategoryId(custom.type);
+    setCategorySelectedManually(true);
     if (!description.trim()) {
       setDescription(`${custom.name}: ${custom.features.join(", ")}`);
     }
   };
 
-  const beginEstimate = (event: FormEvent<HTMLFormElement>) => {
+  // Ask the AI to read the description the same way the chat does. Returns null
+  // when AI is unavailable, so the caller falls back to the local detector.
+  const parseProjectWithAI = async (text: string) => {
+    try {
+      const r = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", content: text }] }),
+      });
+      if (!r.ok) return null;
+      const d = (await r.json()) as {
+        project?: {
+          title?: string;
+          description?: string;
+          category?: string;
+          customCategoryName?: string;
+          complexity?: string;
+          quality?: string;
+          country?: string;
+        };
+      };
+      return d.project ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  // "Analyze my project": understand the idea (AI when possible), research any
+  // custom category / country exactly like the chat, then move to the questions.
+  const beginEstimate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (description.trim().length < 12) return;
 
-    const detectedCategory = selectedCustom
-      ? categoryId
-      : detectCategory(description);
-    const selectedLocationId = locationSelectedManually
-      ? locationId
-      : detectLocation(description);
-    setCategoryId(detectedCategory);
-    setLocationId(selectedLocationId);
-    setQuestionStep(0);
-    setStage("questions");
-    setLoadedDraftId(null);
-    window.setTimeout(() => scrollToSection("estimator"), 30);
+    const categoryIsManual = categorySelectedManually || Boolean(selectedCustom);
+    const locationIsManual = locationSelectedManually;
+    const willUseAI = !categoryIsManual || !locationIsManual;
+
+    let nextCategoryId = categoryId;
+    let nextCustomCategory: CustomCategory | null = customCategory;
+    let nextLocationId = locationId;
+    let nextCustomLocation: CustomLocation | null = customLocation;
+    let nextSizeId = sizeId;
+    let nextQualityId = qualityId;
+
+    if (willUseAI) setIsAnalyzing(true);
+    try {
+      const parsed = willUseAI ? await parseProjectWithAI(description) : null;
+
+      // ---- category (built-in, or built by AI) ----
+      if (!categoryIsManual) {
+        const aiCat = parsed?.category;
+        const customName = parsed?.customCategoryName;
+        const isBuiltIn = Boolean(aiCat && categories.some((c) => c.id === aiCat));
+        if (customName && !isBuiltIn) {
+          // Not one of the 8 built-ins (e.g. a tyre shop) -> build it with AI.
+          nextCustomCategory = await researchCategory(customName, description);
+        } else if (isBuiltIn) {
+          nextCategoryId = aiCat as CategoryId;
+          nextCustomCategory = null;
+        } else {
+          nextCategoryId = detectCategory(description);
+          nextCustomCategory = null;
+        }
+      }
+
+      // ---- location (built-in, or researched country/city) ----
+      if (!locationIsManual) {
+        const aiCountry = parsed?.country;
+        const supported = locations.map((l) => ({ id: l.id, country: l.country }));
+        if (aiCountry) {
+          const matched = matchSupportedCountry(aiCountry, supported);
+          if (matched) {
+            nextLocationId = matched as LocationId;
+            nextCustomLocation = null;
+          } else {
+            const loc = await researchLocation(aiCountry);
+            if (loc) {
+              nextCustomLocation = loc;
+            } else {
+              nextLocationId = detectLocation(description);
+              nextCustomLocation = null;
+            }
+          }
+        } else {
+          nextLocationId = detectLocation(description);
+          nextCustomLocation = null;
+        }
+      }
+
+      // ---- size / quality guessed by the AI (user can still change them) ----
+      if (parsed?.complexity && ["small", "medium", "large"].includes(parsed.complexity)) {
+        nextSizeId = parsed.complexity as ProjectSizeId;
+      }
+      if (parsed?.quality && qualityOptions.some((q) => q.id === parsed.quality)) {
+        nextQualityId = parsed.quality as QualityId;
+      }
+
+      setCategoryId(nextCategoryId);
+      setCustomCategory(nextCustomCategory);
+      setLocationId(nextLocationId);
+      setCustomLocation(nextCustomLocation);
+      setCityName("");
+      setSizeId(nextSizeId);
+      setQualityId(nextQualityId);
+      setQuestionStep(0);
+      setStage("questions");
+      setLoadedDraftId(null);
+      window.setTimeout(() => scrollToSection("estimator"), 30);
+    } finally {
+      if (willUseAI) setIsAnalyzing(false);
+    }
   };
 
-  // Wrapped in useCallback so the pendingRun effect below has stable deps
-  // (react-hooks/exhaustive-deps) and the chatbot can trigger a run with the
-  // already-updated description/category/country/size on the next render.
-  const continueQuestions = useCallback(() => {
-    if (questionStep === 0) {
-      setQuestionStep(1);
-      return;
+  // Manual "Other type — AI research" from the estimator's category dropdown.
+  const handleResearchCategory = async (name: string): Promise<boolean> => {
+    const clean = name.trim();
+    if (!clean) return false;
+    try {
+      const cat = await researchCategory(clean, description);
+      setCustomCategory(cat);
+      setSelectedCustom(null);
+      setCategorySelectedManually(true);
+      notify(`${cat.name} researched`);
+      return true;
+    } catch {
+      return false;
     }
+  };
 
+  // Manual "Other country — AI research" from the estimator's location dropdown.
+  const handleResearchLocation = async (country: string, city: string): Promise<boolean> => {
+    const clean = country.trim();
+    if (!clean) return false;
+    try {
+      const supported = locations.map((l) => ({ id: l.id, country: l.country }));
+      const matched = matchSupportedCountry(clean, supported);
+      if (matched) {
+        setLocationId(matched as LocationId);
+        setCustomLocation(null);
+        setCityName(city.trim());
+        setLocationSelectedManually(true);
+        setCurrencyOverride(null);
+        notify(`${clean} selected`);
+        return true;
+      }
+      const loc = await researchLocation(clean, city);
+      if (!loc) return false;
+      setCustomLocation(loc);
+      setCityName("");
+      setLocationSelectedManually(true);
+      setCurrencyOverride(null);
+      notify(`${loc.country} researched`);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Generate the estimate from the CURRENT committed state. Wrapped in
+  // useCallback so both the estimator's "Continue" and the chatbot's
+  // "Yes, estimate it" run it with the freshest values.
+  const generateEstimate = useCallback(() => {
     setIsGenerating(true);
 
     window.setTimeout(() => {
@@ -266,6 +407,7 @@ export default function Home() {
         {
           location: customLocation ?? undefined,
           category: customCategory ?? undefined,
+          city: cityName || undefined,
         },
       );
       if (titleOverride) {
@@ -274,6 +416,7 @@ export default function Home() {
       }
       setEstimate(result);
       setStage("complete");
+      setQuestionStep(1);
       setLoadedDraftId(null);
       setIsGenerating(false);
 
@@ -292,16 +435,26 @@ export default function Home() {
       window.setTimeout(() => scrollToSection("estimate-result"), 80);
     }, 2000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questionStep, description, categoryId, locationId, sizeId, qualityId, currencyOverride, customLocation, customCategory, titleOverride, history]);
+  }, [description, categoryId, locationId, cityName, sizeId, qualityId, currencyOverride, customLocation, customCategory, titleOverride, history]);
+
+  // Estimator "Continue": step 0 asks the second question, step 1 runs.
+  const continueQuestions = useCallback(() => {
+    if (questionStep === 0) {
+      setQuestionStep(1);
+      return;
+    }
+    generateEstimate();
+  }, [questionStep, generateEstimate]);
 
   // Chatbot "Yes, estimate it" → run on the NEXT render so the state set by
-  // onApplyProject/onApplyCountry (description, category, country, size) is
-  // already committed and continueQuestions reads the fresh values.
+  // onApplyProject/onApplyCountry (description, category, country, size/quality)
+  // is already committed and generateEstimate reads the fresh values. The chat
+  // already collected the answers, so it runs directly (no question step gate).
   useEffect(() => {
     if (!pendingRun) return;
     setPendingRun(false);
-    continueQuestions();
-  }, [pendingRun, continueQuestions]);
+    generateEstimate();
+  }, [pendingRun, generateEstimate]);
 
   const resetEstimate = () => {
     window.history.replaceState(null, "", window.location.pathname);
@@ -310,7 +463,11 @@ export default function Home() {
     setTitleOverride(null);
     setCategoryId("web");
     setLocationId("us");
+    setCityName("");
     setLocationSelectedManually(false);
+    setCategorySelectedManually(false);
+    setCustomLocation(null);
+    setCustomCategory(null);
     setSizeId("medium");
     setQualityId("standard");
     setQuestionStep(0);
@@ -324,6 +481,8 @@ export default function Home() {
     const category = categories.find((item) => item.id === id) ?? categories[0];
     setCategoryId(id);
     setSelectedCustom(null);
+    setCustomCategory(null);
+    setCategorySelectedManually(true);
     setStage("describe");
     setLoadedDraftId(null);
     if (!description.trim()) setDescription(category.example);
@@ -434,6 +593,7 @@ export default function Home() {
       setCategoryId(est.category.id);
       setSelectedCustom(null);
       setLocationId(est.location.id);
+      setCityName(est.location.city);
       setSizeId(est.size.id);
       setQualityId(est.quality.id);
       setEstimate(est);
@@ -448,6 +608,7 @@ export default function Home() {
         setDescription(est.description);
         setCategoryId(est.category.id);
         setLocationId(est.location.id);
+        setCityName(est.location.city);
         setSizeId(est.size.id);
         setQualityId(est.quality.id);
         setEstimate(est);
@@ -511,15 +672,25 @@ export default function Home() {
         onCategoryChange={(id) => {
           setCategoryId(id);
           setSelectedCustom(null);
+          setCustomCategory(null);
+          setCategorySelectedManually(true);
         }}
         customProjectTypes={customProjectTypes}
         selectedCustom={selectedCustom}
         onSelectCustomType={selectCustomType}
         onRemoveCustomType={removeCustomProjectType}
+        onResearchCategory={handleResearchCategory}
+        onResearchLocation={handleResearchLocation}
         onLocationChange={(id) => {
           setLocationId(id);
+          setCityName("");
           setLocationSelectedManually(true);
           setCurrencyOverride(null);
+        }}
+        cityName={cityName}
+        onCityChange={(name) => {
+          setCityName(name);
+          setLocationSelectedManually(true);
         }}
         onSizeChange={setSizeId}
         onQualityChange={setQualityId}
@@ -579,40 +750,41 @@ export default function Home() {
       <Toast message={toast} />
       <Toast message={errorToast} error />
 
-      <GeneratingOverlay showing={isGenerating} />
+      <GeneratingOverlay showing={isGenerating || isAnalyzing} />
 
       <ChatBot
-        supportedCountries={locations.map((l) => ({ id: l.id, country: l.country }))}
+        supportedCountries={locations.map((l) => ({
+          id: l.id,
+          country: l.country,
+          cities: l.cities.map((c) => c.name),
+        }))}
         onApplyProject={(p) => {
           setDescription(p.description.slice(0, 500));
           setSizeId(p.complexity);
-          if (p.customCategory) {
-            setCustomCategory(p.customCategory);
-            if (p.categoryId !== "auto") {
-              setCategoryId(p.categoryId as CategoryId);
-            }
-          } else {
-            setCustomCategory(null);
-            if (p.categoryId !== "auto") {
-              setCategoryId(p.categoryId as CategoryId);
-            }
+          if (p.qualityId) setQualityId(p.qualityId);
+          setCustomCategory(p.customCategory ?? null);
+          if (p.categoryId !== "auto" && !p.customCategory) {
+            setCategoryId(p.categoryId as CategoryId);
           }
+          setCategorySelectedManually(true);
         }}
         onApplyCountry={(c) => {
           if (c.locationId) {
             setLocationId(c.locationId as LocationId);
             setCustomLocation(null);
+            setCityName(c.city ?? "");
             setLocationSelectedManually(true);
             setCurrencyOverride(null);
           } else if (c.custom) {
             setCustomLocation(c.custom);
+            setCityName("");
             setLocationSelectedManually(true);
           }
         }}
         onRunEstimate={() => setPendingRun(true)}
         estimateSummary={
           estimate
-            ? `${estimate.projectTitle}, ${estimate.location.country}, total ${formatCurrency(estimate.total, estimate.location)}, range ${formatCurrency(estimate.low, estimate.location)} to ${formatCurrency(estimate.high, estimate.location)}, ${estimate.durationMin}-${estimate.durationMax} weeks`
+            ? `${estimate.projectTitle}, ${estimate.category.name}, ${estimate.location.city}, ${estimate.location.country}, total ${formatCurrency(estimate.total, estimate.location)}, range ${formatCurrency(estimate.low, estimate.location)} to ${formatCurrency(estimate.high, estimate.location)}, ${estimate.durationMin}-${estimate.durationMax} weeks. Line items: ${estimate.items.slice(0, 5).map((i) => `${i.name} ${formatCurrency(i.quantity * i.rate, estimate.location)}`).join(", ")}`
             : undefined
         }
       />

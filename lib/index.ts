@@ -11,6 +11,7 @@ import type {
   CurrencyCode,
   EstimateItem,
   EstimateResult,
+  LineItemSpec,
   Location,
   LocationId,
   ProjectSizeId,
@@ -145,6 +146,16 @@ export function detectLocation(description: string): LocationId {
     { words: ["germany", "berlin", "munich"], id: "de" },
     { words: ["singapore"], id: "sg" },
     { words: ["nigeria", "lagos", "abuja"], id: "ng" },
+    { words: ["saudi", "riyadh", "jeddah", "ksa"], id: "sa" },
+    { words: ["turkey", "turkiye", "istanbul", "ankara"], id: "tr" },
+    { words: ["philippines", "manila", "cebu"], id: "ph" },
+    { words: ["kenya", "nairobi", "mombasa"], id: "ke" },
+    { words: ["malaysia", "kuala lumpur", "penang"], id: "my" },
+    { words: ["bangladesh", "dhaka", "chittagong"], id: "bd" },
+    { words: ["france", "paris", "lyon", "marseille"], id: "fr" },
+    { words: ["brazil", "sao paulo", "rio de janeiro"], id: "br" },
+    { words: ["egypt", "cairo", "alexandria"], id: "eg" },
+    { words: ["indonesia", "jakarta", "surabaya", "bali"], id: "id" },
   ];
 
   return (
@@ -163,6 +174,15 @@ export function getProjectTitle(description: string, category: Category) {
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
+// Last-resort breakdown if a category somehow has no lineItems of its own.
+const FALLBACK_LINE_ITEMS: ReadonlyArray<LineItemSpec> = [
+  { name: "Discovery & strategy", detail: "Requirements, research and project plan", share: 0.14, quantity: 1 },
+  { name: "UX & UI design", detail: "Wireframes, interface design and prototype", share: 0.16, quantity: 1 },
+  { name: "Development", detail: "Responsive build, features and integrations", share: 0.42, quantity: 1 },
+  { name: "Quality assurance", detail: "Testing, fixes and launch checks", share: 0.16, quantity: 1 },
+  { name: "Project management", detail: "Communication, coordination and handover", share: 0.12, quantity: 1 },
+];
+
 export function calculateEstimate(
   description: string,
   categoryId: CategoryId | "custom",
@@ -173,6 +193,7 @@ export function calculateEstimate(
   custom?: {
     category?: CustomCategory;
     location?: CustomLocation;
+    city?: string;
   },
 ): EstimateResult {
   // Custom category: use AI-provided base/hours/weeks instead of the lookup.
@@ -212,56 +233,58 @@ export function calculateEstimate(
       ? custom.location.unitsPerUsd
       : USD_RATES[currency] ?? 1;
   const location = { ...rawLocation, currency } as Location;
+  // City: the chosen city (chat chip or form select) or the location's default.
+  // Its factor adjusts the country price level (e.g. New York vs Austin).
+  const cityName = custom?.location
+    ? custom.location.city
+    : (custom?.city || location.city);
+  const cityFactor =
+    location.cities?.find((item) => item.name === cityName)?.factor ?? 1;
+  const resolvedLocation = {
+    ...location,
+    city: cityName,
+    multiplier: location.multiplier * cityFactor,
+  } as Location;
   const size =
     projectSizes.find((item) => item.id === sizeId) ?? projectSizes[1];
   const quality =
     qualityOptions.find((item) => item.id === qualityId) ?? qualityOptions[1];
 
   const projectTotal =
-    category.base * location.multiplier * size.multiplier * quality.multiplier;
-  const lineItemShares = [0.14, 0.16, 0.42, 0.16, 0.12];
-  const lineItemDetails = [
-    {
-      name: "Discovery & strategy",
-      detail: "Requirements, research and project plan",
-      quantity: 1,
-    },
-    {
-      name: "UX & UI design",
-      detail: "Wireframes, interface design and prototype",
-      quantity: 28,
-    },
-    {
-      name: "Development",
-      detail: "Responsive build, features and integrations",
-      quantity: Math.round(category.hours * 0.62),
-    },
-    {
-      name: "Quality assurance",
-      detail: "Testing, fixes and launch checks",
-      quantity: 28,
-    },
-    {
-      name: "Project management",
-      detail: "Communication, coordination and handover",
-      quantity: 16,
-    },
-  ];
-  const items: EstimateItem[] = lineItemDetails.map((item, index) => {
-    const amountUsd = projectTotal * lineItemShares[index];
-    return {
-      name: item.name,
-      detail: item.detail,
-      quantity: item.quantity,
-      rate: roundMoney((amountUsd * fx) / item.quantity),
-    };
-  });
+    category.base *
+    resolvedLocation.multiplier *
+    size.multiplier *
+    quality.multiplier;
+  // Line items follow WHAT is being estimated: each built-in category carries
+  // its own breakdown, custom categories (e.g. a tyre shop or mart) carry the
+  // AI-researched items. Shares are normalized so they always sum to 1.
+  const rawSpecs: ReadonlyArray<LineItemSpec> =
+    custom?.category?.items?.length
+      ? custom.category.items
+      : (category.lineItems ?? FALLBACK_LINE_ITEMS);
+  const shareSum =
+    rawSpecs.reduce((sum, spec) => sum + (spec.share > 0 ? spec.share : 0), 0) ||
+    1;
+  const items: EstimateItem[] = rawSpecs
+    .filter((spec) => spec.share > 0)
+    .map((spec) => {
+      const quantity = Math.max(1, Math.round(spec.quantity ?? 1));
+      const amountUsd = projectTotal * (spec.share / shareSum);
+      return {
+        name: spec.name,
+        detail: spec.detail,
+        quantity,
+        rate: roundMoney((amountUsd * fx) / quantity),
+      };
+    });
   const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.rate,
     0,
   );
   const contingency = roundMoney(subtotal * 0.05);
-  const taxes = roundMoney((subtotal + contingency) * location.taxRate);
+  const taxes = roundMoney(
+    (subtotal + contingency) * resolvedLocation.taxRate,
+  );
   const total = subtotal + contingency + taxes;
   const baseWeeks = category.weeks * size.weekFactor * quality.weekFactor;
   const confidence = Math.min(
@@ -273,7 +296,7 @@ export function calculateEstimate(
     projectTitle: getProjectTitle(description, category),
     description,
     category,
-    location,
+    location: resolvedLocation,
     size,
     quality,
     items,
@@ -323,6 +346,13 @@ export function detectCurrencyFromLocale(): CurrencyCode {
         CH: "CHF",
         SE: "SEK",
         NO: "NOK",
+        TR: "TRY",
+        EG: "EGP",
+        MY: "MYR",
+        BD: "BDT",
+        KE: "KES",
+        PH: "PHP",
+        ID: "IDR",
       };
       if (regionToCurrency[region]) return regionToCurrency[region];
     }

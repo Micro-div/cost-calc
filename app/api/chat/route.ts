@@ -1,4 +1,4 @@
-import { CHAT_MODEL, block, clean, failure, getClient, limited, list, reply, toolInput } from "../_lib/ai";
+import { CHAT_MODEL, block, clean, failure, getClient, limited, list, reply, toolInput, type ChatMessage } from "../_lib/ai";
 import { PROJECT_KNOWLEDGE } from "@/lib/chatbot/knowledge";
 
 export const runtime = "nodejs";
@@ -8,19 +8,20 @@ const CATEGORY_IDS = ["web", "mobile", "ecommerce", "design", "seo", "social", "
 
 const SYSTEM = `You are the CostCalc Assistant, a chat widget inside the CostCalc web app.
 
-LANGUAGE
-- Reply in the same language and script as the user's LAST message (Urdu script -> Urdu script, Roman Urdu -> Roman Urdu, English -> English, any other language -> that language). Put its name in "language".
+LANGUAGE (MANDATORY)
+- Reply in the EXACT same language and script as the user's LAST message: Urdu script -> Urdu script, Roman Urdu -> Roman Urdu, English -> English, any other language -> that language. Never switch language, never reply in English when the user wrote in Urdu/Roman Urdu. Before writing, check the user's last message and match it. Put the language name in "language".
+- If the user writes Urdu in Arabic letters (like: مجھے ایک ویب سائٹ چاہیے), your ENTIRE reply MUST also be in Urdu Arabic script. Do NOT answer such messages in Roman Urdu or English. Only use Roman Urdu (Latin letters) when the user themselves wrote Roman Urdu.
 
 STYLE
 - Clean and clear. Usually under 110 words. Plain text only: no markdown, no headings, no emojis. Use "- " bullets only for short lists.
 
 YOUR JOBS
-1. Idea -> clarity. If the idea is vague, ask ONE short question (what is it, who uses it, main features). If it is clear enough, tell the user in 2-4 lines what should be built, then fill "project".
+1. Idea -> clarity. If the idea is vague, ask ONE short question (what is it, who uses it, main features). If it is clear enough, tell the user in 2-4 lines what should be built, then fill "project". Whenever you describe what should be built (not a pure FAQ question), ALWAYS also fill "project" and set offer_estimate=true so the app can run the estimate.
 2. "project.refined_description" is a ready-to-paste project description in ENGLISH, 40-450 chars, concrete (what, who, key features, platform). It goes straight into the app's description box.
-3. Pick "project.category" from: ${CATEGORY_IDS.join(", ")}. If the project truly fits none, use "custom" and set "custom_category_name" (max 4 words). Pick "complexity": small, medium or large.
-4. If the user already named a country, set "project.country" (English name). Do not ask for the country yourself; the app asks it.
-5. When "project" is filled, set offer_estimate=true and end your reply by asking if they want a cost estimate.
-6. Explain CostCalc (what, why, how it works) from the KNOWLEDGE below. If CURRENT_ESTIMATE is provided, you may explain it.
+3. Pick "project.category" from: ${CATEGORY_IDS.join(", ")}. These are digital services. If the project is something else - INCLUDING an offline/local business such as a tyre shop, mart, grocery, restaurant, salon, clinic, gym or warehouse - use "custom" and set "custom_category_name" (max 4 words, e.g. "Tyre shop setup"). Do NOT force an offline business into one of the 8 digital categories. Pick "complexity": small, medium or large.
+4. If the user already named a country (or a city), set "project.country" (English country name). Do not ask for the country yourself; the app asks for it and for the city.
+5. When "project" is filled, set offer_estimate=true and end your reply by asking if they want a cost estimate. BUT if the user EXPLICITLY asks to estimate / show the cost / "estimate karo" / "kitne ka aayega" / "how much" — set estimate_now=true instead (no confirmation question; the app runs it directly).
+6. Explain CostCalc and the current estimate from the KNOWLEDGE below. If CURRENT_ESTIMATE is provided, you may explain its details when asked: category, country + city, each line item's amount and why it is there, totals, range, tax, timeline.
 
 HARD RULES
 - Never state prices, totals or ranges yourself. The app's engine computes them. If asked for a price, offer to run the estimate.
@@ -41,6 +42,7 @@ const RESPOND_TOOL = {
         reply: { type: "string" },
         language: { type: "string" },
         offer_estimate: { type: "boolean" },
+        estimate_now: { type: "boolean", description: "true when the user explicitly asked to run the estimate right now" },
         project: {
           type: "object",
           properties: {
@@ -50,6 +52,7 @@ const RESPOND_TOOL = {
             category: { type: "string", enum: [...CATEGORY_IDS, "custom"] },
             custom_category_name: { type: "string" },
             complexity: { type: "string", enum: ["small", "medium", "large"] },
+            quality: { type: "string", enum: ["essential", "standard", "premium"] },
             country: { type: "string" },
           },
         },
@@ -59,24 +62,12 @@ const RESPOND_TOOL = {
   },
 };
 
-// NOTE: groq-sdk may not export ChatCompletionMessageParam in every published
-// version. Declare a local, structurally compatible type here so the chat
-// completions call stays typed while avoiding a per-version import error.
-type ChatCompletionMessageParam = {
-  role?: "user" | "assistant" | "system" | "function" | "tool";
-  content?: string | null;
-  tool_calls?: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }> | null;
-  name?: string | null;
-  tool_call_id?: string | null;
-  function_call?: { name: string; arguments: string } | null;
-};
-
 export async function POST(req: Request) {
   if (limited(req, 20)) return reply({ error: "Too many requests.", code: "rate_limited" }, 429);
   const client = getClient();
   if (!client) return reply({ error: "AI is not configured on this server.", code: "no_key" }, 500);
 
-  let body: { messages?: unknown; estimateSummary?: unknown };
+  let body: { messages?: unknown; estimateSummary?: unknown; language?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -93,14 +84,24 @@ export async function POST(req: Request) {
   if (!msgs.length || msgs[msgs.length - 1].role !== "user") return reply({ error: "No user message." }, 400);
 
   const summary = clean(body.estimateSummary, 800);
+  const detectedLanguage = clean(body.language, 60);
+  const systemContent = detectedLanguage
+    ? `Detected user language: ${detectedLanguage}. You MUST reply in this exact language.\n\n${SYSTEM}`
+    : SYSTEM;
 
   try {
+    const history = msgs.map(
+      (m): ChatMessage =>
+        m.role === "assistant"
+          ? { role: "assistant", content: m.content }
+          : { role: "user", content: m.content },
+    );
     const first = await client.chat.completions.create({
       model: CHAT_MODEL,
-      max_completion_tokens: 800,
-      messages: [{ role: "system", content: SYSTEM }, ...msgs.map((m) => ({ ...m, role: m.role as "user" | "assistant" | "system" }))] as ChatCompletionMessageParam[],
+      max_completion_tokens: 1600,
+      messages: [{ role: "system", content: systemContent }, ...history],
       tools: [RESPOND_TOOL],
-      tool_choice: "auto",
+      tool_choice: "required",
     });
 
     const firstMsg = first.choices[0]?.message;
@@ -115,9 +116,12 @@ export async function POST(req: Request) {
       const p = (out.project ?? null) as Record<string, unknown> | null;
       const description = clean((p?.refined_description as string | undefined) ?? "", 500);
       const rawCat = clean((p?.category as string | undefined) ?? "", 20);
-      const complexity = ["small", "medium", "large"].includes(clean((p?.complexity as string | undefined) ?? "", 10))
-        ? clean((p?.complexity as string | undefined) ?? "", 10)
-        : "medium";
+      const rawComplexity = clean((p?.complexity as string | undefined) ?? "", 10);
+      const complexity = ["small", "medium", "large"].includes(rawComplexity) ? rawComplexity : "medium";
+      const rawQuality = clean((p?.quality as string | undefined) ?? "", 10);
+      const quality = ["essential", "standard", "premium"].includes(rawQuality)
+        ? (rawQuality as "essential" | "standard" | "premium")
+        : undefined;
 
       const project =
         p && description.length >= 12
@@ -128,6 +132,7 @@ export async function POST(req: Request) {
               category: CATEGORY_IDS.includes(rawCat) || rawCat === "custom" ? rawCat : "auto",
               customCategoryName: clean((p.custom_category_name as string | undefined) ?? "", 60) || undefined,
               complexity,
+              quality,
               country: (clean((p.country as string | undefined) ?? "", 60) || undefined) as string | undefined,
             }
           : undefined;
@@ -136,6 +141,7 @@ export async function POST(req: Request) {
         reply: text,
         language: clean((out.language as string | undefined) ?? "", 30, "English"),
         offerEstimate: Boolean(project && out.offer_estimate),
+        estimateNow: Boolean(project && out.estimate_now),
         project,
       });
     }
@@ -143,19 +149,19 @@ export async function POST(req: Request) {
     const text = clean(firstMsg.content ?? "", 1200);
     if (!text) return reply({ error: "Empty AI response.", code: "empty" }, 502);
 
-    let project: { title?: string; description?: string; features?: string[]; category?: string; customCategoryName?: string; complexity?: string; country?: string } | undefined;
+    let project: { title?: string; description?: string; features?: string[]; category?: string; customCategoryName?: string; complexity?: string; quality?: string; country?: string } | undefined;
     if ((firstMsg.content ?? "").includes('"project"')) {
       const codeMatch = (firstMsg.content ?? "").match(/```json\s*([\s\S]*?)```/i);
       const jsonish = codeMatch ? codeMatch[1] : (firstMsg.content ?? "");
       try {
         const parsed = JSON.parse(jsonish) as Record<string, unknown> | null;
-        const p = parsed?.project ?? null;
+        const p = (parsed?.project ?? null) as Record<string, unknown> | null;
         const description = clean((p?.refined_description as string | undefined) ?? "", 500);
         if (p && description.length >= 12) {
           const rawCat = clean((p.category as string | undefined) ?? "", 20);
-          const complexity = ["small", "medium", "large"].includes(clean((p.complexity as string | undefined) ?? "", 10))
-            ? clean((p.complexity as string | undefined) ?? "", 10)
-            : "medium";
+          const rawComplexity = clean((p.complexity as string | undefined) ?? "", 10);
+          const complexity = ["small", "medium", "large"].includes(rawComplexity) ? rawComplexity : "medium";
+          const rawQuality = clean((p.quality as string | undefined) ?? "", 10);
           project = {
             title: clean((p.title as string | undefined) ?? "", 80, "Custom project"),
             description,
@@ -163,6 +169,7 @@ export async function POST(req: Request) {
             category: CATEGORY_IDS.includes(rawCat) || rawCat === "custom" ? rawCat : "auto",
             customCategoryName: clean((p.custom_category_name as string | undefined) ?? "", 60) || undefined,
             complexity,
+            quality: ["essential", "standard", "premium"].includes(rawQuality) ? rawQuality : undefined,
             country: (clean((p.country as string | undefined) ?? "", 60) || undefined) as string | undefined,
           };
         }
@@ -175,6 +182,7 @@ export async function POST(req: Request) {
       reply: text,
       language: "English",
       offerEstimate: Boolean(project && true),
+      estimateNow: false,
       project,
     });
   } catch (e) {
