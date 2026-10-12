@@ -1,0 +1,5 @@
+{"key":"A","detectCategoryHint":"web","total":5001,"low":4401,"high":5851,"currency":"CAD","taxes":575,"subtotal":4215}
+{"key":"B","detectCategoryHint":"ecommerce","total":13664,"low":12024,"high":15987,"currency":"GBP","taxes":2277,"subtotal":10845}
+{"key":"C","detectCategoryHint":"mobile","total":40461,"low":35606,"high":47339,"currency":"AED","taxes":1927,"subtotal":36699}
+{"key":"D","detectCategoryHint":"ai","total":903632,"low":795196,"high":1057249,"currency":"PKR","taxes":43030,"subtotal":819621}
+{"key":"E","detectCategoryHint":"seo","total":2180,"low":1918,"high":2551,"currency":"EUR","taxes":348,"subtotal":1745}

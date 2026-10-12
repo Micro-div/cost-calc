@@ -1,8 +1,13 @@
 "use client";
 
+<<<<<<< HEAD:components/home/EstimateResult.tsx
+import { assumptions, PRICING_UPDATED, scopeByCategory } from "@/constants";
+=======
+>>>>>>> origin/main:cost-calc/components/home/EstimateResult.tsx
 import { formatCompactCurrency, formatCurrency } from "@/lib";
 import type { EstimateResult as EstimateResultData } from "@/types";
 import { Icon } from "@/components/common/Icon";
+import AiEstimateDetail from "./AiEstimateDetail";
 
 interface EstimateResultSectionProps {
   estimate: EstimateResultData;
@@ -215,7 +220,7 @@ export function EstimateResultSection({
             </div>
             <p className="mt-5 flex items-center gap-1.5 text-[10px] font-medium text-[#9a95a0]">
               <Icon name="clock" className="h-3.5 w-3.5" />
-              Pricing data updated September 2026
+              Pricing data updated {PRICING_UPDATED}
             </p>
           </div>
         </div>
@@ -292,6 +297,31 @@ export function EstimateResultSection({
             </div>
           </div>
 
+<<<<<<< HEAD:components/home/EstimateResult.tsx
+          <AiEstimateDetail
+            estimate={estimate}
+            currency={estimate.location.currency}
+          />
+
+          {(scopeByCategory[estimate.category.id as keyof typeof scopeByCategory] ?? []).length > 0 && (
+            <div className="rounded-[24px] border border-[#e7e4eb] bg-white p-5 shadow-[0_8px_30px_rgba(34,29,49,0.04)] sm:p-7">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold tracking-[-0.03em] text-[#292530]">
+                    Suggested scope of work
+                  </h3>
+                  <p className="mt-1 text-xs text-[#8a8590]">
+                    A practical starting point for your project
+                  </p>
+                </div>
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#e9f8f1] text-[#29926c]">
+                  <Icon name="check" />
+                </span>
+              </div>
+              <div className="mt-6 space-y-3">
+                {(scopeByCategory[estimate.category.id as keyof typeof scopeByCategory] ?? []).map((item, index) => (
+                  <div
+=======
           <div className="rounded-[24px] border border-[#e7e4eb] bg-white p-5 shadow-[0_8px_30px_rgba(34,29,49,0.04)] sm:p-7">
             <div className="flex items-center justify-between">
               <div>
@@ -329,16 +359,38 @@ export function EstimateResultSection({
               <ul className="mt-3 space-y-2">
                 {estimate.assumptions.slice(0, 4).map((item) => (
                   <li
+>>>>>>> origin/main:cost-calc/components/home/EstimateResult.tsx
                     key={item}
-                    className="flex items-start gap-2 text-xs leading-5 text-[#746657]"
+                    className="flex items-start gap-3 rounded-2xl bg-[#faf9fb] p-3.5"
                   >
-                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#c5913f]" />
-                    {item}
-                  </li>
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-white text-[10px] font-bold text-[#6a55d7] shadow-sm">
+                      {index + 1}
+                    </span>
+                    <p className="pt-0.5 text-sm font-medium leading-5 text-[#514c58]">
+                      {item}
+                    </p>
+                  </div>
                 ))}
-              </ul>
+              </div>
+              <div className="mt-6 rounded-2xl border border-[#f0dfbd] bg-[#fffaf0] p-4">
+                <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] text-[#9a681c]">
+                  <Icon name="shield" className="h-4 w-4" />
+                  Key assumptions
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {assumptions.slice(0, 3).map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-2 text-xs leading-5 text-[#746657]"
+                    >
+                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#c5913f]" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="mt-5 flex flex-col gap-4 rounded-[22px] border border-[#e8e4ed] bg-[#f8f7fa] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">

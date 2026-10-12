@@ -1,0 +1,30 @@
+ M .gitignore
+ D app/api/estimates/route.ts
+ M app/layout.tsx
+ M app/page.tsx
+ M components/home/EstimateResult.tsx
+ M components/home/Estimator.tsx
+ M components/quotation/QuoteModal.tsx
+ M constants/index.ts
+ D cost-calc
+ M lib/index.ts
+ M next.config.mjs
+ M package-lock.json
+ M package.json
+ M types/index.ts
+ D woocommerce-country-currency-switcher.php
+?? AGENT_REPORT.md
+?? AGENT_TASK.md
+?? INTEGRATION_GUIDE.md
+?? MANUAL_GUIDE.md
+?? PROJECT_CONTEXT.md
+?? agent_after.json
+?? agent_baseline.json
+?? agent_status.txt
+?? app/api/_lib/
+?? app/api/chat/
+?? app/api/estimate-detail/
+?? app/api/estimate-params/
+?? components/chatbot/
+?? components/home/AiEstimateDetail.tsx
+?? lib/chatbot/

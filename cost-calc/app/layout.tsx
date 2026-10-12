@@ -3,7 +3,7 @@ import { LoadingWrapper } from "@/components/common/LoadingWrapper";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CostCalc — AI Project Cost Estimator",
+  title: "CostCalc - AI Project Cost Estimator",
   description:
     "Describe your project and get a localized cost range, detailed scope, timeline and professional quotation in minutes.",
   keywords: [
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "project quotation",
   ],
   openGraph: {
-    title: "CostCalc — AI Project Cost Estimator",
+    title: "CostCalc - AI Project Cost Estimator",
     description:
       "Get a clear, localized cost estimate and professional quotation for your next project.",
     type: "website",

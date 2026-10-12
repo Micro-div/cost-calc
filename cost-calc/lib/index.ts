@@ -10,14 +10,20 @@ import type {
   CurrencyCode,
   EstimateItem,
   EstimateResult,
+  LineItemSpec,
   Location,
   LocationId,
   ProjectSizeId,
   QualityId,
 } from "@/types";
+<<<<<<< HEAD:lib/index.ts
+import type { CustomCategory, CustomLocation } from "@/lib/chatbot/types";
+=======
 import { analyzeProjectWithAi } from "./analyzeProject";
 import type { AiAnalysisPayload } from "./aiAnalysis";
+>>>>>>> origin/main:cost-calc/lib/index.ts
 
+export type { CustomCategory, CustomLocation };
 export function roundMoney(value: number) {
   return Math.round(value);
 }
@@ -46,6 +52,91 @@ export function formatCompactCurrency(value: number, location: Location) {
   return `${symbol}${Math.round(value)}`;
 }
 
+<<<<<<< HEAD:lib/index.ts
+export function detectCategory(description: string): CategoryId {
+  const value = description.toLowerCase();
+  const matches: Array<{ words: string[]; id: CategoryId }> = [
+    {
+      words: ["ecommerce", "e-commerce", "online store", "shopify", "checkout"],
+      id: "ecommerce",
+    },
+    {
+      words: ["mobile app", "android", "ios", "fitness app", "application"],
+      id: "mobile",
+    },
+    {
+      words: [
+        "ai ",
+        "artificial intelligence",
+        "automation",
+        "assistant",
+        "chatbot",
+      ],
+      id: "ai",
+    },
+    {
+      words: [
+        "logo",
+        "branding",
+        "brand identity",
+        "visual identity",
+        "coffee brand",
+      ],
+      id: "branding",
+    },
+    {
+      words: ["ui", "ux", "prototype", "wireframe", "product design"],
+      id: "design",
+    },
+    {
+      words: ["seo", "search engine", "organic traffic", "ranking"],
+      id: "seo",
+    },
+    {
+      words: [
+        "social media",
+        "instagram",
+        "content calendar",
+        "posts per month",
+      ],
+      id: "social",
+    },
+    {
+      words: [
+        "website",
+        "web app",
+        "web application",
+        "landing page",
+        "portfolio",
+      ],
+      id: "web",
+    },
+  ];
+
+  // Count keyword matches for EVERY category, pick the one with the most
+  // matches. Tie (or no match at all) prefers "web" — the previous behavior
+  // stopped at the first matching category in array order, which misfired on
+  // texts like "website ... basic SEO" (matched seo first).
+  const best = matches.reduce<{ id: CategoryId; count: number } | null>(
+    (acc, entry) => {
+      const count = entry.words.filter((word) => value.includes(word)).length;
+      if (count === 0) return acc;
+      if (
+        !acc ||
+        count > acc.count ||
+        (count === acc.count && entry.id === "web")
+      ) {
+        return { id: entry.id, count };
+      }
+      return acc;
+    },
+    null,
+  );
+  return best?.id ?? "web";
+}
+
+=======
+>>>>>>> origin/main:cost-calc/lib/index.ts
 export function detectLocation(description: string): LocationId {
   const value = description.toLowerCase();
   const matches: Array<{ words: string[]; id: LocationId }> = [
@@ -62,6 +153,16 @@ export function detectLocation(description: string): LocationId {
     { words: ["germany", "berlin", "munich"], id: "de" },
     { words: ["singapore"], id: "sg" },
     { words: ["nigeria", "lagos", "abuja"], id: "ng" },
+    { words: ["saudi", "riyadh", "jeddah", "ksa"], id: "sa" },
+    { words: ["turkey", "turkiye", "istanbul", "ankara"], id: "tr" },
+    { words: ["philippines", "manila", "cebu"], id: "ph" },
+    { words: ["kenya", "nairobi", "mombasa"], id: "ke" },
+    { words: ["malaysia", "kuala lumpur", "penang"], id: "my" },
+    { words: ["bangladesh", "dhaka", "chittagong"], id: "bd" },
+    { words: ["france", "paris", "lyon", "marseille"], id: "fr" },
+    { words: ["brazil", "sao paulo", "rio de janeiro"], id: "br" },
+    { words: ["egypt", "cairo", "alexandria"], id: "eg" },
+    { words: ["indonesia", "jakarta", "surabaya", "bali"], id: "id" },
   ];
 
   return (
@@ -70,13 +171,79 @@ export function detectLocation(description: string): LocationId {
   );
 }
 
+<<<<<<< HEAD:lib/index.ts
+export function getProjectTitle(description: string, category: Category) {
+  const cleaned = description
+    .trim()
+    .replace(/^(i need|we need|please create|i want|we want)\s+/i, "")
+    .replace(/[.!?]+$/, "");
+
+  if (cleaned.length < 20 || cleaned.length > 76) return category.shortName;
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+// Last-resort breakdown if a category somehow has no lineItems of its own.
+const FALLBACK_LINE_ITEMS: ReadonlyArray<LineItemSpec> = [
+  { name: "Discovery & strategy", detail: "Requirements, research and project plan", share: 0.14, quantity: 1 },
+  { name: "UX & UI design", detail: "Wireframes, interface design and prototype", share: 0.16, quantity: 1 },
+  { name: "Development", detail: "Responsive build, features and integrations", share: 0.42, quantity: 1 },
+  { name: "Quality assurance", detail: "Testing, fixes and launch checks", share: 0.16, quantity: 1 },
+  { name: "Project management", detail: "Communication, coordination and handover", share: 0.12, quantity: 1 },
+];
+
+=======
+>>>>>>> origin/main:cost-calc/lib/index.ts
 export function calculateEstimate(
   description: string,
-  categoryId: CategoryId,
-  locationId: LocationId,
+  categoryId: CategoryId | "custom",
+  locationId: LocationId | "custom",
   sizeId: ProjectSizeId,
   qualityId: QualityId,
   currencyOverride?: CurrencyCode | null,
+<<<<<<< HEAD:lib/index.ts
+  custom?: {
+    category?: CustomCategory;
+    location?: CustomLocation;
+    city?: string;
+  },
+): EstimateResult {
+  // Custom category: use AI-provided base/hours/weeks instead of the lookup.
+  const category: Category = custom?.category
+    ? {
+        id: categoryId as CategoryId,
+        name: custom.category.name,
+        shortName: custom.category.name,
+        description: custom.category.summary ?? "",
+        icon: categories[0].icon,
+        base: custom.category.baseUsd,
+        hours: custom.category.hours,
+        weeks: custom.category.weeks,
+        example: "",
+        range: `$${Math.round(custom.category.baseUsd * 0.6)} - $${Math.round(custom.category.baseUsd * 2.4)}`,
+      }
+    : categories.find((item) => item.id === categoryId) ?? categories[0];
+  // Custom location: use AI-fetched country data instead of the lookup.
+  const rawLocation: Location = custom?.location
+    ? {
+        id: locationId as LocationId,
+        country: custom.location.country,
+        city: custom.location.city,
+        currency: custom.location.currency as CurrencyCode,
+        multiplier: custom.location.multiplier,
+        taxRate: custom.location.taxRate,
+      }
+    : locations.find((item) => item.id === locationId) ?? locations[0];
+  // Currency: the location's own currency unless an override was passed.
+  // For a custom location its own ISO code is cast in — Intl.NumberFormat
+  // accepts any valid ISO 4217 code, no fixed lookup table involved.
+  const currency = (
+    currencyOverride ?? rawLocation.currency
+  ) as CurrencyCode;
+  const fx =
+    custom?.location && currency === (custom.location.currency as CurrencyCode)
+      ? custom.location.unitsPerUsd
+      : USD_RATES[currency] ?? 1;
+=======
   aiAnalysis?: AiAnalysisPayload | null,
 ): EstimateResult {
   // The optional AI result only supplies category/features/complexity/subject/
@@ -88,13 +255,54 @@ export function calculateEstimate(
   const rawLocation =
     locations.find((item) => item.id === locationId) ?? locations[0];
   const currency: CurrencyCode = currencyOverride ?? rawLocation.currency;
+>>>>>>> origin/main:cost-calc/lib/index.ts
   const location = { ...rawLocation, currency } as Location;
-  const fx = USD_RATES[currency] ?? 1;
+  // City: the chosen city (chat chip or form select) or the location's default.
+  // Its factor adjusts the country price level (e.g. New York vs Austin).
+  const cityName = custom?.location
+    ? custom.location.city
+    : (custom?.city || location.city);
+  const cityFactor =
+    location.cities?.find((item) => item.name === cityName)?.factor ?? 1;
+  const resolvedLocation = {
+    ...location,
+    city: cityName,
+    multiplier: location.multiplier * cityFactor,
+  } as Location;
   const size =
     projectSizes.find((item) => item.id === sizeId) ?? projectSizes[1];
   const quality =
     qualityOptions.find((item) => item.id === qualityId) ?? qualityOptions[1];
 
+<<<<<<< HEAD:lib/index.ts
+  const projectTotal =
+    category.base *
+    resolvedLocation.multiplier *
+    size.multiplier *
+    quality.multiplier;
+  // Line items follow WHAT is being estimated: each built-in category carries
+  // its own breakdown, custom categories (e.g. a tyre shop or mart) carry the
+  // AI-researched items. Shares are normalized so they always sum to 1.
+  const rawSpecs: ReadonlyArray<LineItemSpec> =
+    custom?.category?.items?.length
+      ? custom.category.items
+      : (category.lineItems ?? FALLBACK_LINE_ITEMS);
+  const shareSum =
+    rawSpecs.reduce((sum, spec) => sum + (spec.share > 0 ? spec.share : 0), 0) ||
+    1;
+  const items: EstimateItem[] = rawSpecs
+    .filter((spec) => spec.share > 0)
+    .map((spec) => {
+      const quantity = Math.max(1, Math.round(spec.quantity ?? 1));
+      const amountUsd = projectTotal * (spec.share / shareSum);
+      return {
+        name: spec.name,
+        detail: spec.detail,
+        quantity,
+        rate: roundMoney((amountUsd * fx) / quantity),
+      };
+    });
+=======
   // New analyzer-driven base price; country, size and quality multipliers
   // (and later the currency conversion, contingency and tax) still apply.
   const multiplier = location.multiplier * size.multiplier * quality.multiplier;
@@ -104,12 +312,15 @@ export function calculateEstimate(
     quantity: 1,
     rate: roundMoney(line.usd * multiplier * fx),
   }));
+>>>>>>> origin/main:cost-calc/lib/index.ts
   const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.rate,
     0,
   );
   const contingency = roundMoney(subtotal * 0.05);
-  const taxes = roundMoney((subtotal + contingency) * location.taxRate);
+  const taxes = roundMoney(
+    (subtotal + contingency) * resolvedLocation.taxRate,
+  );
   const total = subtotal + contingency + taxes;
   const weekFactor = size.weekFactor * quality.weekFactor;
   const durationMin = Math.max(
@@ -129,7 +340,7 @@ export function calculateEstimate(
     projectTitle: analysis.heading,
     description,
     category,
-    location,
+    location: resolvedLocation,
     size,
     quality,
     items,
@@ -182,6 +393,13 @@ export function detectCurrencyFromLocale(): CurrencyCode {
         CH: "CHF",
         SE: "SEK",
         NO: "NOK",
+        TR: "TRY",
+        EG: "EGP",
+        MY: "MYR",
+        BD: "BDT",
+        KE: "KES",
+        PH: "PHP",
+        ID: "IDR",
       };
       if (regionToCurrency[region]) return regionToCurrency[region];
     }

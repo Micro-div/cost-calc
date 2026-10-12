@@ -21,6 +21,7 @@ import type {
   QualityId,
   Stage,
 } from "@/types";
+import type { CustomCategory, CustomLocation } from "@/lib/chatbot/types";
 import { Icon } from "@/components/common/Icon";
 
 export interface EstimatorProps {
@@ -29,6 +30,7 @@ export interface EstimatorProps {
   description: string;
   categoryId: CategoryId;
   locationId: LocationId;
+  cityName: string;
   sizeId: ProjectSizeId;
   qualityId: QualityId;
   questionStep: number;
@@ -36,10 +38,16 @@ export interface EstimatorProps {
   descriptionReady: boolean;
   selectedCategory: Category;
   selectedLocation: Location;
+  isGenerating?: boolean;
+  customLocation?: CustomLocation | null;
+  customCategory?: CustomCategory | null;
+  onCategoryChangeCustom?: () => void;
+  onLocationChangeCustom?: () => void;
   onDescriptionChange: (value: string) => void;
   autoCategoryHint?: string | null;
   onCategoryChange: (id: CategoryId) => void;
   onLocationChange: (id: LocationId) => void;
+  onCityChange: (name: string) => void;
   onSizeChange: (id: ProjectSizeId) => void;
   onQualityChange: (id: QualityId) => void;
   onSubmitDescription: (event: FormEvent<HTMLFormElement>) => void;
@@ -48,16 +56,18 @@ export interface EstimatorProps {
   onViewEstimate: () => void;
   isGenerating?: boolean;
   onNewEstimate: () => void;
-  customDescription: string;
-  onCustomDescriptionChange: (value: string) => void;
-  onAnalyzeCustom: () => void;
-  analyzing: boolean;
   customProjectTypes: CustomProjectType[];
   selectedCustom: CustomProjectType | null;
   onSelectCustomType: (name: string) => void;
   onRemoveCustomType: (name: string) => void;
-  customSummary: string;
+  // Manual "Other (AI research)" actions. Resolve true when a value was applied.
+  onResearchCategory?: (name: string) => Promise<boolean>;
+  onResearchLocation?: (country: string, city: string) => Promise<boolean>;
 }
+
+// Sentinel values so the two "Other" choices never clash with a real id.
+const ADD_CATEGORY = "__add_category__";
+const ADD_LOCATION = "__add_location__";
 
 /* Entrance animation: desktop slides in from the right, mobile slides up from the bottom.
    The negative delay makes the motion already "in progress" at first paint (no pause). */
@@ -131,6 +141,7 @@ export function Estimator({
   description,
   categoryId,
   locationId,
+  cityName,
   sizeId,
   qualityId,
   questionStep,
@@ -142,6 +153,7 @@ export function Estimator({
   autoCategoryHint,
   onCategoryChange,
   onLocationChange,
+  onCityChange,
   onSizeChange,
   onQualityChange,
   onSubmitDescription,
@@ -149,18 +161,64 @@ export function Estimator({
   onContinueQuestions,
   onViewEstimate,
   onNewEstimate,
-  customDescription,
-  onCustomDescriptionChange,
-  onAnalyzeCustom,
-  analyzing,
+  isGenerating,
+  customLocation,
+  customCategory,
+  onCategoryChangeCustom,
+  onLocationChangeCustom,
   customProjectTypes,
   selectedCustom,
   onSelectCustomType,
   onRemoveCustomType,
-  customSummary,
+  onResearchCategory,
+  onResearchLocation,
 }: EstimatorProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [addingLocation, setAddingLocation] = useState(false);
+  const [newCountry, setNewCountry] = useState("");
+  const [newCity, setNewCity] = useState("");
+  const [busyResearch, setBusyResearch] = useState<"category" | "location" | null>(null);
+  const [researchError, setResearchError] = useState("");
+
+  const submitCategoryResearch = async () => {
+    const name = newCategory.trim();
+    if (!name || busyResearch || !onResearchCategory) return;
+    setResearchError("");
+    setBusyResearch("category");
+    try {
+      const ok = await onResearchCategory(name);
+      if (ok) {
+        setAddingCategory(false);
+        setNewCategory("");
+      } else {
+        setResearchError("Could not research this type. Try a different name.");
+      }
+    } finally {
+      setBusyResearch(null);
+    }
+  };
+
+  const submitLocationResearch = async () => {
+    const country = newCountry.trim();
+    if (!country || busyResearch || !onResearchLocation) return;
+    setResearchError("");
+    setBusyResearch("location");
+    try {
+      const ok = await onResearchLocation(country, newCity.trim());
+      if (ok) {
+        setAddingLocation(false);
+        setNewCountry("");
+        setNewCity("");
+      } else {
+        setResearchError("Could not research this country. Try a different name.");
+      }
+    } finally {
+      setBusyResearch(null);
+    }
+  };
 
   useEffect(() => {
     const node = cardRef.current;
@@ -266,15 +324,23 @@ export function Estimator({
                     />
                     <select
                       value={
-                        selectedCustom
-                          ? `custom:${selectedCustom.name}`
-                          : categoryId
+                        customCategory
+                          ? "custom-category"
+                          : selectedCustom
+                            ? `custom:${selectedCustom.name}`
+                            : categoryId
                       }
                       onChange={(event) => {
                         const value = event.target.value;
-                        if (value.startsWith("custom:")) {
+                        if (value === ADD_CATEGORY) {
+                          setAddingCategory(true);
+                          setResearchError("");
+                        } else if (value.startsWith("custom:")) {
                           onSelectCustomType(value.slice("custom:".length));
+                        } else if (value === "custom-category") {
+                          // Already the AI-found category; nothing to change.
                         } else {
+                          if (customCategory) onCategoryChangeCustom?.();
                           onCategoryChange(value as CategoryId);
                         }
                       }}
@@ -285,6 +351,13 @@ export function Estimator({
                           {category.shortName}
                         </option>
                       ))}
+                      {customCategory && (
+                        <optgroup label="AI found">
+                          <option value="custom-category">
+                            {customCategory.name}
+                          </option>
+                        </optgroup>
+                      )}
                       {customProjectTypes.length > 0 && (
                         <optgroup label="Your projects">
                           {customProjectTypes.map((custom) => (
@@ -297,6 +370,11 @@ export function Estimator({
                           ))}
                         </optgroup>
                       )}
+                      <optgroup label="Not in the list?">
+                        <option value={ADD_CATEGORY}>
+                          Other type — AI research…
+                        </option>
+                      </optgroup>
                     </select>
                     <Icon
                       name="chevron-down"
@@ -325,50 +403,6 @@ export function Estimator({
                     </button>
                   </div>
                 )}
-                {/* <div className="mt-3 rounded-xl border border-[#e3e0e7] bg-white p-3">
-                <label
-                  htmlFor="custom-project-description"
-                  className="text-xs font-bold text-[#5c5864]"
-                >
-                  Describe your own project
-                </label>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    id="custom-project-description"
-                    value={customDescription}
-                    onChange={(event) =>
-                      onCustomDescriptionChange(event.target.value.slice(0, 200))
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        onAnalyzeCustom();
-                      }
-                    }}
-                    placeholder="tyre shop with online booking and stock tracking"
-                    className="h-10 min-w-0 flex-1 rounded-lg border border-[#dedbe4] bg-white px-3 text-sm text-[#33303a] outline-none transition placeholder:text-[#aaa6b0] focus:border-[#7661e8] focus:ring-4 focus:ring-[#7661e8]/10"
-                  />
-                  <button
-                    type="button"
-                    onClick={onAnalyzeCustom}
-                    disabled={!customDescription.trim() || analyzing}
-                    className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#6754e7] px-3 text-xs font-bold text-white transition hover:bg-[#5946d3] disabled:cursor-not-allowed disabled:bg-[#c8c3d6]"
-                  >
-                    {analyzing ? (
-                      <Icon name="rotate" className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Icon name="sparkles" className="h-3.5 w-3.5" />
-                    )}
-                    {analyzing ? "Analyzing" : "Analyze"}
-                  </button>
-                </div>
-                {customSummary && (
-                  <p className="mt-2 text-[11px] leading-5 text-[#797581]">
-                    {customSummary}
-                  </p>
-                )}
-              </div>
- */}
               </div>
               <label className="block">
                 <span className="sr-only">Project location</span>
@@ -378,10 +412,18 @@ export function Estimator({
                     className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#6d58db]"
                   />
                   <select
-                    value={locationId}
-                    onChange={(event) =>
-                      onLocationChange(event.target.value as LocationId)
-                    }
+                    value={customLocation ? "custom" : locationId}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (value === ADD_LOCATION) {
+                        setAddingLocation(true);
+                        setResearchError("");
+                        return;
+                      }
+                      if (value === "custom") return; // AI-found row selected again
+                      onLocationChangeCustom?.();
+                      onLocationChange(value as LocationId);
+                    }}
                     className="h-11 w-full appearance-none rounded-xl border border-[#dedbe4] bg-white pl-10 pr-9 text-sm font-semibold text-[#403c47] outline-none transition focus:border-[#7661e8] focus:ring-4 focus:ring-[#7661e8]/10"
                   >
                     {locations.map((location) => (
@@ -389,6 +431,50 @@ export function Estimator({
                         {location.city}, {location.country}
                       </option>
                     ))}
+                    {customLocation && (
+                      <option value="custom">
+                        {customLocation.country} (AI-found)
+                      </option>
+                    )}
+                    <optgroup label="Not in the list?">
+                      <option value={ADD_LOCATION}>
+                        Other country — AI research…
+                      </option>
+                    </optgroup>
+                  </select>
+                  <Icon
+                    name="chevron-down"
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#77727f]"
+                  />
+                </span>
+              </label>
+              <label className="block">
+                <span className="sr-only">Project city</span>
+                <span className="relative block">
+                  <Icon
+                    name="globe"
+                    className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#6d58db]"
+                  />
+                  <select
+                    value={customLocation ? (customLocation.city || "") : (cityName || selectedLocation.city)}
+                    onChange={(event) => onCityChange(event.target.value)}
+                    disabled={Boolean(customLocation)}
+                    className="h-11 w-full appearance-none rounded-xl border border-[#dedbe4] bg-white pl-10 pr-9 text-sm font-semibold text-[#403c47] outline-none transition focus:border-[#7661e8] focus:ring-4 focus:ring-[#7661e8]/10 disabled:cursor-not-allowed disabled:bg-[#f1eff5] disabled:text-[#9a96a1]"
+                  >
+                    {(selectedLocation.cities ?? [{ name: selectedLocation.city, factor: 1 }]).map((c) => (
+                      <option key={c.name} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                    {Boolean(cityName) &&
+                      !(selectedLocation.cities ?? []).some((c) => c.name === cityName) && (
+                        <option value={cityName}>{cityName}</option>
+                      )}
+                    {customLocation && (
+                      <option value={customLocation.city ?? ""}>
+                        {customLocation.city} (AI-found)
+                      </option>
+                    )}
                   </select>
                   <Icon
                     name="chevron-down"
@@ -397,6 +483,125 @@ export function Estimator({
                 </span>
               </label>
             </div>
+
+            {addingCategory && (
+              <div className="mt-3 rounded-xl border border-[#d9d5f3] bg-[#faf9ff] p-3">
+                <p className="text-xs font-bold text-[#4d3cc0]">
+                  Build a new category (AI research)
+                </p>
+                <p className="mt-0.5 text-[11px] text-[#8a8695]">
+                  Type any project or business type — e.g. tyre shop, restaurant, gym, warehouse.
+                </p>
+                <input
+                  value={newCategory}
+                  onChange={(event) =>
+                    setNewCategory(event.target.value.slice(0, 60))
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void submitCategoryResearch();
+                    }
+                  }}
+                  placeholder="e.g. tyre shop, restaurant, gym"
+                  className="mt-2 h-10 w-full rounded-lg border border-[#dedbe4] bg-white px-3 text-sm text-[#33303a] outline-none transition focus:border-[#7661e8] focus:ring-2 focus:ring-[#7661e8]/15"
+                />
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void submitCategoryResearch()}
+                    disabled={busyResearch === "category" || !newCategory.trim()}
+                    className="flex-1 rounded-lg bg-[#6754e7] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#5946d3] disabled:cursor-not-allowed disabled:bg-[#c8c3d6]"
+                  >
+                    {busyResearch === "category" ? "Researching…" : "Research & use"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingCategory(false);
+                      setNewCategory("");
+                      setResearchError("");
+                    }}
+                    className="rounded-lg border border-[#ddd9e3] bg-white px-3 py-2 text-xs font-bold text-[#5c5864] transition hover:bg-[#f7f6f8]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {researchError && (
+                  <p className="mt-1.5 text-[11px] font-medium text-[#b42318]">
+                    {researchError}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {addingLocation && (
+              <div className="mt-3 rounded-xl border border-[#d9d5f3] bg-[#faf9ff] p-3">
+                <p className="text-xs font-bold text-[#4d3cc0]">
+                  Research another country or city (AI)
+                </p>
+                <p className="mt-0.5 text-[11px] text-[#8a8695]">
+                  Type any country and, optionally, a city.
+                </p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <input
+                    value={newCountry}
+                    onChange={(event) =>
+                      setNewCountry(event.target.value.slice(0, 60))
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void submitLocationResearch();
+                      }
+                    }}
+                    placeholder="Country, e.g. Portugal"
+                    className="h-10 w-full rounded-lg border border-[#dedbe4] bg-white px-3 text-sm text-[#33303a] outline-none transition focus:border-[#7661e8] focus:ring-2 focus:ring-[#7661e8]/15"
+                  />
+                  <input
+                    value={newCity}
+                    onChange={(event) =>
+                      setNewCity(event.target.value.slice(0, 60))
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void submitLocationResearch();
+                      }
+                    }}
+                    placeholder="City (optional)"
+                    className="h-10 w-full rounded-lg border border-[#dedbe4] bg-white px-3 text-sm text-[#33303a] outline-none transition focus:border-[#7661e8] focus:ring-2 focus:ring-[#7661e8]/15"
+                  />
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void submitLocationResearch()}
+                    disabled={busyResearch === "location" || !newCountry.trim()}
+                    className="flex-1 rounded-lg bg-[#6754e7] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#5946d3] disabled:cursor-not-allowed disabled:bg-[#c8c3d6]"
+                  >
+                    {busyResearch === "location" ? "Researching…" : "Research & use"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddingLocation(false);
+                      setNewCountry("");
+                      setNewCity("");
+                      setResearchError("");
+                    }}
+                    className="rounded-lg border border-[#ddd9e3] bg-white px-3 py-2 text-xs font-bold text-[#5c5864] transition hover:bg-[#f7f6f8]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {researchError && (
+                  <p className="mt-1.5 text-[11px] font-medium text-[#b42318]">
+                    {researchError}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <button
@@ -421,7 +626,7 @@ export function Estimator({
             </div>
             <p className="mt-2 text-center text-[10px] font-medium text-[#95919c]">
               {descriptionReady
-                ? "Your description stays private and is never shared."
+                ? "Your history is saved only in your browser. Text is sent to an AI provider to generate answers; we do not store it."
                 : "Add a few details above to continue."}
             </p>
           </form>
@@ -612,7 +817,7 @@ export function Estimator({
         <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-2 pb-1 pt-4 text-[10px] font-semibold text-[#918c98]">
           <span className="flex items-center gap-1.5">
             <Icon name="lock" className="h-3.5 w-3.5" />
-            Private by default
+            Your history is saved only in your browser. Text is sent to an AI provider to generate answers; we do not store it.
           </span>
           <span className="flex items-center gap-1.5">
             <Icon name="calculator" className="h-3.5 w-3.5" />

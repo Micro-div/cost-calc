@@ -1,5 +1,19 @@
 {
+<<<<<<< HEAD
+  "name": "costcalc",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--no-experimental-webstorage next dev",
+    "build": "cross-env NODE_OPTIONS=--no-experimental-webstorage next build",
+    "start": "cross-env NODE_OPTIONS=--no-experimental-webstorage next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+=======
+>>>>>>> origin/main
   "dependencies": {
+
     "next": "15.3.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

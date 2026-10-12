@@ -1,12 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-
-  // Required for static export: disables the Image Optimization API
-  images: {
-    unoptimized: true,
-  },
-
   // Fix Windows build crash during trace collection
   // Limit build workers: this machine has ~4GB RAM and the worker pool
   // otherwise gets OOM-killed during static generation/export
